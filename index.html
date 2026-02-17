@@ -91,7 +91,8 @@
       min-width: 380px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.04);
     }
-    #chart_status, #chart_venc, #chart_map { width:100%; height:320px; }
+
+    #chart_status, #chart_venc, #chart_map, #chart_dir { width:100%; height:320px; }
 
     .legend-risk {
       display: flex;
@@ -276,7 +277,6 @@
         </select>
       </div>
 
-      <!-- ✅ NOVO: filtro por UF -->
       <div class="field">
         <div class="label">UF</div>
         <select id="filterUF" class="select">
@@ -320,8 +320,6 @@
           <div class="kpiLabel">Sem data</div>
           <div class="value" id="kpi_semdata">—</div>
         </div>
-
-        <!-- ✅ NOVO: KPI Arquivados separado -->
         <div class="card">
           <div class="kpiLabel">Arquivados</div>
           <div class="value" id="kpi_arquivados">—</div>
@@ -354,9 +352,17 @@
         </div>
       </div>
 
-      <div class="panel" style="margin-top:14px;">
-        <h3>Mapa (parcerias por UF)</h3>
-        <div id="chart_map"></div>
+      <!-- ✅ MAPA + DIRETORIAS NA MESMA ROW (lado a lado) -->
+      <div class="row" style="margin-top:14px;">
+        <div class="panel">
+          <h3>Mapa (parcerias por UF)</h3>
+          <div id="chart_map"></div>
+        </div>
+
+        <div class="panel">
+          <h3>Diretorias responsáveis (quantitativo)</h3>
+          <div id="chart_dir"></div>
+        </div>
       </div>
 
       <div class="panel" style="margin-top:14px;">
@@ -402,7 +408,7 @@
     // =========================
     // AJUSTE AQUI
     // =========================
-    const CSV_URL = "./data/tbl_instrumentos.csv"; // GitHub Pages: caminho relativo
+    const CSV_URL = "./data/tbl_instrumentos.csv";
 
     // =========================
     // Helpers
@@ -433,7 +439,6 @@
 
       const s = String(raw).trim().slice(0, 10);
 
-      // dd/mm/yyyy ou dd-mm-yyyy
       let m = s.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
       if (m) {
         const dd = Number(m[1]), mm = Number(m[2]), yy = Number(m[3]);
@@ -441,7 +446,6 @@
         return isNaN(d) ? null : d;
       }
 
-      // yyyy-mm-dd
       m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
       if (m) {
         const yy = Number(m[1]), mm = Number(m[2]), dd = Number(m[3]);
@@ -479,7 +483,7 @@
     }
 
     function getUF(r) {
-      const ufRaw = getFirst(r, ["uf","UF","estado","Estado","estado_uf","uf_parceiro"]);
+      const ufRaw = getFirst(r, ["uf","UF","estado_uf","uf_parceiro"]);
       const uf = String(ufRaw || "").trim().toUpperCase();
       return /^[A-Z]{2}$/.test(uf) ? uf : "";
     }
@@ -532,10 +536,9 @@
     const filterTipoEl = document.getElementById("filterTipo");
     const filterStatusEl = document.getElementById("filterStatus");
     const filterInstEl = document.getElementById("filterInst");
-    const filterUFEl = document.getElementById("filterUF"); // ✅ novo
+    const filterUFEl = document.getElementById("filterUF");
 
     function populateFilterOptions(rows) {
-      // Ano (vencimento)
       const years = new Set();
       rows.forEach(r => {
         const rawV = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
@@ -547,7 +550,6 @@
         `<option value="">Todos</option>` +
         yearsSorted.map(y => `<option value="${y}">${y}</option>`).join("");
 
-      // Tipo
       const tipos = new Set();
       rows.forEach(r => {
         const t = String(getFirst(r, ["tipo_instrumento","Tipo","tipo"]) || "").trim();
@@ -558,7 +560,6 @@
         `<option value="">Todos</option>` +
         tiposSorted.map(t => `<option value="${escapeHTML(t)}">${escapeHTML(t)}</option>`).join("");
 
-      // Instituição
       const insts = new Set();
       rows.forEach(r => {
         const inst = String(getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) || "").trim();
@@ -569,7 +570,6 @@
         `<option value="">Todas</option>` +
         instsSorted.map(i => `<option value="${escapeHTML(i)}">${escapeHTML(i)}</option>`).join("");
 
-      // ✅ UF
       const ufs = new Set();
       rows.forEach(r => {
         const uf = getUF(r);
@@ -591,7 +591,6 @@
 
       let rows = tbl;
 
-      // filtro por mês (clique no gráfico de vencimentos)
       if (activeMonth) {
         rows = rows.filter(r => {
           const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
@@ -601,7 +600,6 @@
         });
       }
 
-      // ano
       if (year) {
         rows = rows.filter(r => {
           const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
@@ -611,12 +609,10 @@
         });
       }
 
-      // tipo
       if (tipo) {
         rows = rows.filter(r => String(getFirst(r, ["tipo_instrumento","Tipo","tipo"]) || "").trim() === tipo);
       }
 
-      // instituição
       if (instSel) {
         rows = rows.filter(r => {
           const inst = String(getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) || "").trim();
@@ -624,22 +620,18 @@
         });
       }
 
-      // ✅ UF
       if (ufSel) {
         rows = rows.filter(r => getUF(r) === ufSel);
       }
 
-      // status
       if (statusSel) {
         rows = rows.filter(r => computeStatus(r) === statusSel);
       }
 
-      // busca
       if (q) {
         rows = rows.filter(r => norm(Object.values(r).join(" ")).includes(q));
       }
 
-      // UI: estado do filtro
       const anyFilter = Boolean(activeMonth || q || year || tipo || statusSel || instSel || ufSel);
       if (anyFilter) {
         resetBtnEl.classList.add("active");
@@ -699,7 +691,7 @@
         const venc   = formatDateBR(getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]));
 
         const stat  = computeStatus(r);
-        const setor = getFirst(r, ["setor_lotacao","Setor","setor"]);
+        const setor = getFirst(r, ["diretoria_responsavel","Diretoria Responsável","setor_lotacao","Setor","setor"]);
 
         const possuiAditivoRaw = getFirst(r, ["possui_aditivo","aditivo","Aditivo"]);
         const qtdAditivosRaw   = getFirst(r, ["quantos_aditivos","Qtd Aditivos","qtd_aditivos"]);
@@ -723,6 +715,7 @@
         const dtDoe  = formatDateBR(getFirst(r, ["data_publicacao_doe","data_publiação doe","data_publicacao_DOE"]));
         const numExt = getFirst(r, ["numero_extrato_publicacao","número_extrato_publicacao","numero_extrato","extrato_publicacao"]);
         const linkDoe = getFirst(r, ["link_publicacao_doe","link publicacao_doe_doe","link_doe","publicacao_doe_link"]);
+
         const estado = getFirst(r, ["estado","Estado"]);
 
         const objetivoTexto = getFirst(r, ["objetivo_resumido","objetivo_geral","objeto","Objeto"]);
@@ -757,7 +750,7 @@
                 <div class="k">Resp. FVS:</div><div class="v">${escapeHTML(respFvs || "—")}</div>
                 <div class="k">Repasse:</div><div class="v">${escapeHTML(repasse || "—")}</div>
 
-                <div class="k">Estado:</div><div class="v">${escapeHTML(estado || "—")}</div> 
+                <div class="k">Estado:</div><div class="v">${escapeHTML(estado || "—")}</div>
 
                 <div class="k">Assinatura:</div><div class="v">${escapeHTML(dtAss || "—")}</div>
                 <div class="k">Publicação DOE:</div><div class="v">${escapeHTML(dtDoe || "—")}</div>
@@ -800,16 +793,13 @@
     const kpi_vigentes = document.getElementById("kpi_vigentes");
     const kpi_alerta = document.getElementById("kpi_alerta");
     const kpi_semdata = document.getElementById("kpi_semdata");
-    const kpi_arquivados = document.getElementById("kpi_arquivados"); // ✅ novo
+    const kpi_arquivados = document.getElementById("kpi_arquivados");
 
     function updateKPIs(rows) {
-      // KPI Arquivados separado (respeita filtros)
       const arquivados = rows.filter(r => computeStatus(r) === "ARQUIVADO").length;
       kpi_arquivados.textContent = arquivados;
 
-      // KPIs principais ignoram arquivados
       const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
-
       const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "SEM DATA": 0 };
       base.forEach(r => { counts[computeStatus(r)]++; });
 
@@ -821,7 +811,6 @@
 
     function buildStatusDonut(rows) {
       const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
-
       const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "SEM DATA": 0 };
       base.forEach(r => { counts[computeStatus(r)]++; });
 
@@ -848,7 +837,7 @@
     function buildVencBar(rows) {
       const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
 
-      const monthMap = new Map(); // key -> {count, color}
+      const monthMap = new Map();
       base.forEach(r => {
         const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
         const d = parseDateAny(rawVenc);
@@ -899,16 +888,60 @@
       });
     }
 
-    // =========================
-    // MAPA — SOLUÇÃO FINAL (contagem correta)
-    // =========================
+    // ✅ AGORA GLOBAL (fora de buildVencBar) — NÃO QUEBRA O SCRIPT
+    function buildDiretoriaBar(rows) {
+      const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+
+      const byDir = new Map();
+      base.forEach(r => {
+        const dir = String(getFirst(r, [
+          "diretoria_responsavel",
+          "Diretoria Responsável",
+          "setor_lotacao",
+          "Setor",
+          "setor"
+        ]) || "").trim();
+        if (!dir) return;
+        byDir.set(dir, (byDir.get(dir) || 0) + 1);
+      });
+
+      const chartEl = document.getElementById("chart_dir");
+      if (!chartEl) return;
+
+      if (byDir.size === 0) {
+        Plotly.purge(chartEl);
+        chartEl.innerHTML = `<div class="muted">Sem dados de diretoria para plotar.</div>`;
+        return;
+      }
+
+      const items = Array.from(byDir.entries()).sort((a,b) => b[1] - a[1]);
+      const y = items.map(([dir]) => dir);
+      const x = items.map(([,count]) => count);
+
+      Plotly.newPlot(chartEl, [{
+        type: "bar",
+        orientation: "h",
+        y,
+        x,
+        marker: { color: "#6b7280" },  /* ✅ cor sugerida: azul institucional */
+        text: x.map(v => String(v)),
+        textposition: "outside",
+        cliponaxis: false,
+        hovertemplate: "<b>%{y}</b><br>Instrumentos: %{x}<extra></extra>",
+        showlegend: false
+      }], {
+        height: 320,
+        margin: { t: 10, r: 30, b: 30, l: 160 },
+        xaxis: { title: "Quantidade", rangemode: "tozero", automargin: true },
+        yaxis: { automargin: true }
+      }, { displayModeBar:false, responsive:true });
+    }
+
     function buildBrazilMap(rows) {
       rows = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
 
-      // 1) DEDUPE GLOBAL (instrumento)
       const seen = new Set();
       const uniqueRows = [];
-
       rows.forEach(r => {
         const id =
           String(getFirst(r, ["id_instrumento","ID","identificacao","Identificação","numero_processo","Processo","processo"]) || "")
@@ -918,12 +951,9 @@
         seen.add(id);
         uniqueRows.push(r);
       });
-
       rows = uniqueRows;
 
-      // 2) AGREGA POR UF com SETs
-      const byUF = new Map(); // uf -> { ids:Set, inst:Set }
-
+      const byUF = new Map();
       rows.forEach(r => {
         const uf = getUF(r);
         if (!uf) return;
@@ -937,7 +967,6 @@
         const inst = String(instRaw || "").trim();
 
         if (!byUF.has(uf)) byUF.set(uf, { ids: new Set(), inst: new Set() });
-
         const bucket = byUF.get(uf);
         bucket.ids.add(id);
         if (inst) bucket.inst.add(inst);
@@ -947,7 +976,6 @@
         byUF.set("AM", { ids: new Set(["—"]), inst: new Set(["—"]) });
       }
 
-      // 3) COORDENADAS (centróides)
       const ufCoords = {
         AC: [-8.77, -70.55], AL: [-9.57, -36.78], AM: [-3.47, -65.10], AP: [ 1.41, -51.77],
         BA: [-12.96, -41.71], CE: [-5.20, -39.53], DF: [-15.83, -47.86], ES: [-19.19, -40.34],
@@ -958,7 +986,6 @@
         SE: [-10.57, -37.45], SP: [-22.19, -48.79], TO: [-10.25, -48.25]
       };
 
-      // 4) ARRAYS PARA PLOT
       const ufs = Array.from(byUF.keys()).sort();
       const lats = [];
       const lons = [];
@@ -1037,8 +1064,8 @@
 
             let rows = res.data || [];
             rows = rows.filter(r => Object.values(r || {}).some(v => String(v ?? "").trim() !== ""));
-
             if (!rows.length) return reject(new Error("CSV vazio ou não encontrado"));
+
             resolve(rows);
           },
           error: (err) => reject(err)
@@ -1049,12 +1076,13 @@
 
       populateFilterOptions(tbl);
 
-      // gráficos + mapa usam a base completa (não filtrada), e a tabela responde ao filtro
+      // gráficos usam base completa
       buildStatusDonut(tbl);
       buildVencBar(tbl);
       buildBrazilMap(tbl);
+      buildDiretoriaBar(tbl);
 
-      // primeira renderização
+      // tabela + KPIs (com filtro)
       applyFilters();
     })().catch(err => {
       console.error("[INIT] ERRO:", err);
