@@ -711,8 +711,8 @@
         const venc   = formatDateBR(getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]));
 
         const stat  = computeStatus(r);
-        const setor = getFirst(r, ["diretoria_responsavel","Diretoria Responsável","setor_lotacao","Setor","setor"]);
-        const gerencia = getFirst(r, ["gerencia_responsavel","Gerência","gerencia"]);
+        const diretoria = getFirst(r, ["diretoria_responsavel", "Diretoria", "setor_lotacao", "Setor", "setor"]);
+        const gerencia  = getFirst(r, ["gerencia_responsavel", "Gerência", "gerencia"]);
 
         const possuiAditivoRaw = getFirst(r, ["possui_aditivo","aditivo","Aditivo"]);
         const qtdAditivosRaw   = getFirst(r, ["quantos_aditivos","Qtd Aditivos","qtd_aditivos"]);
