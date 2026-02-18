@@ -203,8 +203,8 @@
     .tbl thead th:nth-child(3),
     .tbl tbody td:nth-child(3){ text-align:left; white-space: normal; }
 
-    .tbl thead th:nth-child(9),
-    .tbl tbody td:nth-child(9){ white-space: normal; word-break: break-word; }
+    .tbl thead th:nth-child(10),
+    .tbl tbody td:nth-child(10){ white-space: normal; word-break: break-word; }
 
     .detailsRow td{ background:#fff; }
     .detailsBox{
@@ -375,6 +375,25 @@
           <span><strong>TC</strong> = Termo de Colaboração</span>
         </div>
 
+        <details style="margin-top:10px;">
+  <summary class="btn" style="display:inline-block; user-select:none;">
+    Ver estrutura organizacional
+  </summary>
+
+  <div class="legenda" style="margin-top:10px; width:100%;">
+    <strong>Diretorias</strong><br>
+    <span><strong>DEPI</strong> – Diretoria de Ensino, Pesquisa e Inovação</span><br>
+    <span><strong>DVACD</strong> – Diretoria de Vigilância Ambiental e Controle de Doenças</span><br>
+    <span><strong>DVE</strong> – Diretoria de Vigilância Epidemiológica</span><br>
+    <span><strong>LACEN</strong> – Laboratório Público Central</span><br><br>
+
+    <strong>Gerências</strong><br>
+    <span><strong>GPAVS</strong> – Gerência de Pesquisa Aplicada a Vigilância em Saúde</span><br>
+    <span><strong>SGENTO</strong> – Subgerência de Entomologia</span><br>
+    <span><strong>SASS</strong> – Sala de Análise de Situação de Saúde</span>
+  </div>
+</details>
+
         <div class="toolbar">
           <input id="search" placeholder="Buscar (identificação, instituição, processo, status...)" />
         </div>
@@ -387,7 +406,8 @@
                   <th>Identificação</th>
                   <th>Tipo</th>
                   <th>Instituição</th>
-                  <th>Setor</th>
+                  <th>Diretoria</th>
+                  <th>Gerência</th>
                   <th>Status</th>
                   <th>Início</th>
                   <th>Vencimento</th>
@@ -692,6 +712,7 @@
 
         const stat  = computeStatus(r);
         const setor = getFirst(r, ["diretoria_responsavel","Diretoria Responsável","setor_lotacao","Setor","setor"]);
+        const gerencia = getFirst(r, ["gerencia_resposavel","gerencia_responsavel","Gerência","gerencia"]);
 
         const possuiAditivoRaw = getFirst(r, ["possui_aditivo","aditivo","Aditivo"]);
         const qtdAditivosRaw   = getFirst(r, ["quantos_aditivos","Qtd Aditivos","qtd_aditivos"]);
@@ -730,6 +751,7 @@
           <td>${escapeHTML(tipo || "—")}</td>
           <td>${escapeHTML(inst || "—")}</td>
           <td>${escapeHTML(setor || "—")}</td>
+          <td>${escapeHTML(gerencia || "—")}</td>
           <td>${escapeHTML(stat || "—")}</td>
           <td>${escapeHTML(inicio || "—")}</td>
           <td>${escapeHTML(venc || "—")}</td>
@@ -743,7 +765,7 @@
         trDetails.className = "detailsRow";
         trDetails.style.display = "none";
         trDetails.innerHTML = `
-          <td colspan="10">
+          <td colspan="11">
             <div class="detailsBox">
               <div class="kv">
                 <div class="k">Coord. parceiro:</div><div class="v">${escapeHTML(coordParceiro || "—")}</div>
