@@ -299,6 +299,10 @@
         <button id="resetFilters" class="btn" style="width:100%;">Ver todos</button>
       </div>
 
+      <div class="field">
+  <button id="btnConcluidos" class="btn" style="width:100%;">ACTs concluídos</button>
+</div>
+
       <div id="filterHint" class="filterHint"></div>
     </aside>
 
@@ -331,22 +335,8 @@
           <h3>Status de vigência</h3>
           <div id="chart_status"></div>
 
-          <div class="legend-status">
-            <div class="item"><span class="box vig"></span><span>VIGENTE</span></div>
-            <div class="item"><span class="box alt"></span><span>ALERTA 180 DIAS</span></div>
-            <div class="item"><span class="box sem"></span><span>SEM DATA</span></div>
-          </div>
-        </div>
-
         <div class="panel">
           <h3>Vencimentos por mês</h3>
-
-          <div class="legend-risk">
-            <div class="item"><span class="box red"></span><span>&lt; 1 ano (crítico)</span></div>
-            <div class="item"><span class="box yellow"></span><span>1–2 anos (atenção)</span></div>
-            <div class="item"><span class="box green"></span><span>&gt; 2 anos (vigência confortável)</span></div>
-            <div class="item"><span class="box gray"></span><span>Sem data</span></div>
-          </div>
 
           <div id="chart_venc"></div>
         </div>
@@ -551,6 +541,7 @@
     // =========================
     const searchEl = document.getElementById("search");
     const resetBtnEl = document.getElementById("resetFilters");
+    const btnConcluidosEl = document.getElementById("btnConcluidos");
     const hintEl = document.getElementById("filterHint");
     const filterYearEl = document.getElementById("filterYear");
     const filterTipoEl = document.getElementById("filterTipo");
@@ -685,6 +676,26 @@
       filterUFEl.value = "";
       applyFilters();
     });
+
+btnConcluidosEl.addEventListener("click", () => {
+  const rows = tbl.filter(r => {
+    const exec = String(getFirst(r, [
+      "status_execucao",
+      "situacao_execucao",
+      "situacao",
+      "status",
+      "andamento"
+    ]) || "").toUpperCase();
+
+    return exec.includes("CONCL") || exec.includes("FINALIZ");
+  });
+
+  render(rows);
+  updateKPIs(rows);
+
+  hintEl.textContent = "Filtro ativo → ACTs concluídos";
+  resetBtnEl.classList.add("active");
+});
 
     searchEl.addEventListener("input", applyFilters);
     filterYearEl.addEventListener("change", applyFilters);
