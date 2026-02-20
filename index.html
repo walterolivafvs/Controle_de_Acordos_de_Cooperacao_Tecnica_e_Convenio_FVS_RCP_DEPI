@@ -82,6 +82,14 @@
     .card .value { font-size:28px; font-weight:800; margin-top:6px; }
 
     .row { display:flex; gap:14px; flex-wrap:wrap; }
+    /* Mantém mapa + diretorias sempre lado a lado (sem quebrar linha) */
+.row.row-map-dir{
+  flex-wrap: nowrap;
+}
+.row.row-map-dir > .panel{
+  flex: 1 1 0;
+  min-width: 0; /* essencial pra não forçar quebra */
+}
     .panel{
       background: var(--card);
       border: 1px solid var(--border);
@@ -176,7 +184,7 @@
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
-      min-width: 1220px; /* um pouco maior pra acomodar colunas */
+      min-width: 1250px; /* um pouco maior pra acomodar colunas */
     }
     .tbl th, .tbl td{
       border-bottom:1px solid #eee;
@@ -203,8 +211,8 @@
     .tbl tbody td:nth-child(3){ text-align:left; white-space: normal; }
 
     /* Processo: deixa quebrar linha e caber melhor */
-    .tbl thead th:nth-child(11),
-    .tbl tbody td:nth-child(11){
+    .tbl thead th:nth-child(10),
+    .tbl tbody td:nth-child(10){
       white-space: normal;
       word-break: break-word;
     }
@@ -305,8 +313,8 @@
       <div id="filterHint" class="filterHint"></div>
 
       <!-- ✅ NOVO: KPI Concluídos no sidebar (não espreme os cards do topo) -->
-      <div class="field" style="margin-top:12px;">
-        <div class="label">ACTs concluídos</div>
+          <div class="row row-map-dir" style="margin-top:14px;">
+          <div class="label">ACTs concluídos</div>
         <div id="kpi_concluidos_sidebar" style="font-weight:800; font-size:22px;">—</div>
 
         <details style="margin-top:8px;">
