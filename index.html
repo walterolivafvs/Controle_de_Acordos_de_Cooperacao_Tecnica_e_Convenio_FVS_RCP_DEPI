@@ -291,7 +291,8 @@
           <option value="VIGENTE">VIGENTE</option>
           <option value="ALERTA 180 DIAS">ALERTA 180 DIAS</option>
           <option value="SEM DATA">SEM DATA</option>
-</select>
+          <option value="ARQUIVADO">ARQUIVADO</option>
+        </select>
       </div>
 
       <div class="field">
@@ -315,7 +316,15 @@
           <div class="kpiLabel">Alerta (≤180 dias)</div>
           <div class="value" id="kpi_alerta">—</div>
         </div>
-</div>
+        <div class="card">
+          <div class="kpiLabel">Sem data</div>
+          <div class="value" id="kpi_semdata">—</div>
+        </div>
+        <div class="card">
+          <div class="kpiLabel">Arquivados</div>
+          <div class="value" id="kpi_arquivados">—</div>
+        </div>
+      </div>
 
       <div class="row">
         <div class="panel">
@@ -804,16 +813,22 @@
     // =========================
     const kpi_total = document.getElementById("kpi_total");
     const kpi_vigentes = document.getElementById("kpi_vigentes");
-    const kpi_alerta = document.getElementById("kpi_alerta");    function updateKPIs(rows) {
-      // Remove ARQUIVADOS do painel inteiro
-      const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+    const kpi_alerta = document.getElementById("kpi_alerta");
+    const kpi_semdata = document.getElementById("kpi_semdata");
+    const kpi_arquivados = document.getElementById("kpi_arquivados");
 
+    function updateKPIs(rows) {
+      const arquivados = rows.filter(r => computeStatus(r) === "ARQUIVADO").length;
+      kpi_arquivados.textContent = arquivados;
+
+      const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
       const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "SEM DATA": 0 };
       base.forEach(r => { counts[computeStatus(r)]++; });
 
       kpi_total.textContent = base.length;
       kpi_vigentes.textContent = counts["VIGENTE"];
       kpi_alerta.textContent = counts["ALERTA 180 DIAS"];
+      kpi_semdata.textContent = counts["SEM DATA"];
     }
 
     function buildStatusDonut(rows) {
@@ -1079,8 +1094,7 @@
         });
       });
 
-      // Remove ARQUIVADOS do dataset (não aparecem no painel)
-      tbl = parsed.filter(r => computeStatus(r) !== "ARQUIVADO");
+      tbl = parsed;
 
       populateFilterOptions(tbl);
 
