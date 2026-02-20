@@ -91,7 +91,6 @@
       min-width: 380px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.04);
     }
-
     #chart_status, #chart_venc, #chart_map, #chart_dir { width:100%; height:320px; }
 
     .legend-risk {
@@ -177,7 +176,7 @@
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
-      min-width: 1100px;
+      min-width: 1220px; /* um pouco maior pra acomodar colunas */
     }
     .tbl th, .tbl td{
       border-bottom:1px solid #eee;
@@ -203,8 +202,12 @@
     .tbl thead th:nth-child(3),
     .tbl tbody td:nth-child(3){ text-align:left; white-space: normal; }
 
-    .tbl thead th:nth-child(10),
-    .tbl tbody td:nth-child(10){ white-space: normal; word-break: break-word; }
+    /* Processo: deixa quebrar linha e caber melhor */
+    .tbl thead th:nth-child(11),
+    .tbl tbody td:nth-child(11){
+      white-space: normal;
+      word-break: break-word;
+    }
 
     .detailsRow td{ background:#fff; }
     .detailsBox{
@@ -300,6 +303,17 @@
       </div>
 
       <div id="filterHint" class="filterHint"></div>
+
+      <!-- ✅ NOVO: KPI Concluídos no sidebar (não espreme os cards do topo) -->
+      <div class="field" style="margin-top:12px;">
+        <div class="label">ACTs concluídos</div>
+        <div id="kpi_concluidos_sidebar" style="font-weight:800; font-size:22px;">—</div>
+
+        <details style="margin-top:8px;">
+          <summary class="btn" style="display:inline-block; user-select:none;">Ver instituições</summary>
+          <div id="list_concluidos_sidebar" class="muted" style="margin-top:8px;">—</div>
+        </details>
+      </div>
     </aside>
 
     <main class="main">
@@ -320,13 +334,10 @@
           <div class="kpiLabel">Sem data</div>
           <div class="value" id="kpi_semdata">—</div>
         </div>
+
         <div class="card">
           <div class="kpiLabel">Arquivados</div>
           <div class="value" id="kpi_arquivados">—</div>
-
-        <div class="card">
-          <div class="kpiLabel">ACTs Concluídos</div>
-          <div class="value" id="kpi_concluidos">—</div>
         </div>
       </div>
 
@@ -356,17 +367,14 @@
         </div>
       </div>
 
-      <!-- ✅ MAPA + DIRETORIAS NA MESMA ROW (lado a lado) -->
-      <div class="row" style="margin-top:14px;">
-        <div class="panel">
-          <h3>Mapa (parcerias por UF)</h3>
-          <div id="chart_map"></div>
-        </div>
+      <div class="panel" style="margin-top:14px;">
+        <h3>Mapa (parcerias por UF)</h3>
+        <div id="chart_map"></div>
+      </div>
 
-        <div class="panel">
-          <h3>Diretorias responsáveis (quantitativo)</h3>
-          <div id="chart_dir"></div>
-        </div>
+      <div class="panel" style="margin-top:14px;">
+        <h3>Diretorias responsáveis (quantitativo)</h3>
+        <div id="chart_dir"></div>
       </div>
 
       <div class="panel" style="margin-top:14px;">
@@ -379,24 +387,26 @@
           <span><strong>TC</strong> = Termo de Colaboração</span>
         </div>
 
+        <!-- Botão/legenda estrutura organizacional (mantém o que já funcionou) -->
         <details style="margin-top:10px;">
-  <summary class="btn" style="display:inline-block; user-select:none;">
-    Ver estrutura organizacional
-  </summary>
+          <summary class="btn" style="display:inline-block; user-select:none;">
+            Ver estrutura organizacional
+          </summary>
 
-  <div class="legenda" style="margin-top:10px; width:100%;">
-    <strong>Diretorias</strong><br>
-    <span><strong>DEPI</strong> – Diretoria de Ensino, Pesquisa e Inovação</span><br>
-    <span><strong>DVACD</strong> – Diretoria de Vigilância Ambiental e Controle de Doenças</span><br>
-    <span><strong>DVE</strong> – Diretoria de Vigilância Epidemiológica</span><br>
-    <span><strong>LACEN</strong> – Laboratório Público Central</span><br><br>
+          <div class="legenda" style="margin-top:10px; width:100%;">
+            <strong>Diretorias</strong><br>
+            <span><strong>DEPI</strong> – Diretoria de Ensino, Pesquisa e Inovação</span><br>
+            <span><strong>DVACD</strong> – Diretoria de Vigilância Ambiental e Controle de Doenças</span><br>
+            <span><strong>DVE</strong> – Diretoria de Vigilância Epidemiológica</span><br>
+            <span><strong>LACEN</strong> – Laboratório Público Central</span><br><br>
 
-    <strong>Gerências</strong><br>
-    <span><strong>GPAVS</strong> – Gerência de Pesquisa Aplicada a Vigilância em Saúde</span><br>
-    <span><strong>SGENTO</strong> – Subgerência de Entomologia</span><br>
-    <span><strong>SASS</strong> – Sala de Análise de Situação de Saúde</span>
-  </div>
-</details>
+            <strong>Gerências</strong><br>
+            <span><strong>GPAVS</strong> – Gerência de Pesquisa Aplicada a Vigilância em Saúde</span><br>
+            <span><strong>GRNB</strong> – Gerência de Riscos Não Biológicos</span><br>
+            <span><strong>SGENTO</strong> – Subgerência de Entomologia</span><br>
+            <span><strong>SASS</strong> – Sala de Análise de Situação de Saúde</span>
+          </div>
+        </details>
 
         <div class="toolbar">
           <input id="search" placeholder="Buscar (identificação, instituição, processo, status...)" />
@@ -507,7 +517,7 @@
     }
 
     function getUF(r) {
-      const ufRaw = getFirst(r, ["uf","UF","estado_uf","uf_parceiro"]);
+      const ufRaw = getFirst(r, ["uf","UF","estado","Estado","estado_uf","uf_parceiro"]);
       const uf = String(ufRaw || "").trim().toUpperCase();
       return /^[A-Z]{2}$/.test(uf) ? uf : "";
     }
@@ -715,8 +725,8 @@
         const venc   = formatDateBR(getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]));
 
         const stat  = computeStatus(r);
-        const diretoria = getFirst(r, ["diretoria_responsavel", "Diretoria", "setor_lotacao", "Setor", "setor"]);
-        const gerencia  = getFirst(r, ["gerencia_responsavel", "Gerência", "gerencia"]);
+        const diretoria = getFirst(r, ["diretoria_responsavel","diretoria_resposavel","Diretoria","setor_lotacao","Setor","setor"]);
+        const gerencia  = getFirst(r, ["gerencia_responsavel","gerencia_resposavel","Gerência","gerencia","gerência"]);
 
         const possuiAditivoRaw = getFirst(r, ["possui_aditivo","aditivo","Aditivo"]);
         const qtdAditivosRaw   = getFirst(r, ["quantos_aditivos","Qtd Aditivos","qtd_aditivos"]);
@@ -740,7 +750,6 @@
         const dtDoe  = formatDateBR(getFirst(r, ["data_publicacao_doe","data_publiação doe","data_publicacao_DOE"]));
         const numExt = getFirst(r, ["numero_extrato_publicacao","número_extrato_publicacao","numero_extrato","extrato_publicacao"]);
         const linkDoe = getFirst(r, ["link_publicacao_doe","link publicacao_doe_doe","link_doe","publicacao_doe_link"]);
-
         const estado = getFirst(r, ["estado","Estado"]);
 
         const objetivoTexto = getFirst(r, ["objetivo_resumido","objetivo_geral","objeto","Objeto"]);
@@ -820,13 +829,19 @@
     const kpi_alerta = document.getElementById("kpi_alerta");
     const kpi_semdata = document.getElementById("kpi_semdata");
     const kpi_arquivados = document.getElementById("kpi_arquivados");
-    const kpi_concluidos = document.getElementById("kpi_concluidos");
+
+    // ✅ sidebar concluídos
+    const kpi_concluidos_sidebar = document.getElementById("kpi_concluidos_sidebar");
+    const list_concluidos_sidebar = document.getElementById("list_concluidos_sidebar");
 
     function updateKPIs(rows) {
+      // Arquivados (respeita filtros)
       const arquivados = rows.filter(r => computeStatus(r) === "ARQUIVADO").length;
       kpi_arquivados.textContent = arquivados;
 
+      // Base (KPIs/plots principais ignoram arquivados)
       const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+
       const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "SEM DATA": 0 };
       base.forEach(r => { counts[computeStatus(r)]++; });
 
@@ -835,33 +850,48 @@
       kpi_alerta.textContent = counts["ALERTA 180 DIAS"];
       kpi_semdata.textContent = counts["SEM DATA"];
 
-      function updateKPIs(rows) {
-  const arquivados = rows.filter(r => computeStatus(r) === "ARQUIVADO").length;
-  kpi_arquivados.textContent = arquivados;
+      // =========================
+      // KPI CONCLUÍDOS (sidebar)
+      // =========================
+      const concluidosRows = base.filter(r => {
+        const exec = String(getFirst(r, [
+          "status_execucao",
+          "status_execução",
+          "situacao_execucao",
+          "situação_execução",
+          "situacao",
+          "situação",
+          "andamento",
+          "execucao"
+        ]) || "").toUpperCase();
 
-  const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
-  const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "SEM DATA": 0 };
-  base.forEach(r => { counts[computeStatus(r)]++; });
+        return exec.includes("CONCL") || exec.includes("FINALIZ");
+      });
 
-  kpi_total.textContent = base.length;
-  kpi_vigentes.textContent = counts["VIGENTE"];
-  kpi_alerta.textContent = counts["ALERTA 180 DIAS"];
-  kpi_semdata.textContent = counts["SEM DATA"];
+      if (kpi_concluidos_sidebar) {
+        kpi_concluidos_sidebar.textContent = concluidosRows.length;
+      }
 
-  // =========================
-  // KPI CONCLUÍDOS
-  // =========================
-  const concluidos = base.filter(r => {
-    const exec = String(getFirst(r, ["status_execucao"]) || "").toUpperCase();
-    return exec.includes("CONCL");
-  }).length;
+      const insts = Array.from(new Set(
+        concluidosRows.map(r => String(getFirst(r, [
+          "instituicao_parceira",
+          "instituicao",
+          "Instituição",
+          "instituicao_parceira_nome"
+        ]) || "").trim()).filter(Boolean)
+      )).sort((a,b) => a.localeCompare(b, "pt-BR"));
 
-  kpi_concluidos.textContent = concluidos;
-}
+      if (list_concluidos_sidebar) {
+        list_concluidos_sidebar.innerHTML = insts.length
+          ? `<ul style="margin:6px 0 0; padding-left:18px;">${insts.slice(0, 12).map(i => `<li>${escapeHTML(i)}</li>`).join("")}</ul>` +
+            (insts.length > 12 ? `<div class="muted" style="margin-top:6px;">+ ${insts.length - 12} outras</div>` : "")
+          : `<div class="muted">—</div>`;
+      }
     }
 
     function buildStatusDonut(rows) {
       const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+
       const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "SEM DATA": 0 };
       base.forEach(r => { counts[computeStatus(r)]++; });
 
@@ -939,19 +969,12 @@
       });
     }
 
-    // ✅ AGORA GLOBAL (fora de buildVencBar) — NÃO QUEBRA O SCRIPT
     function buildDiretoriaBar(rows) {
       const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
 
       const byDir = new Map();
       base.forEach(r => {
-        const dir = String(getFirst(r, [
-          "diretoria_responsavel",
-          "Diretoria Responsável",
-          "setor_lotacao",
-          "Setor",
-          "setor"
-        ]) || "").trim();
+        const dir = String(getFirst(r, ["diretoria_responsavel","diretoria_resposavel","Diretoria","setor_lotacao","Setor","setor"]) || "").trim();
         if (!dir) return;
         byDir.set(dir, (byDir.get(dir) || 0) + 1);
       });
@@ -974,15 +997,15 @@
         orientation: "h",
         y,
         x,
-        marker: { color: "#6b7280" },  /* ✅ cor sugerida: azul institucional */
         text: x.map(v => String(v)),
         textposition: "outside",
         cliponaxis: false,
         hovertemplate: "<b>%{y}</b><br>Instrumentos: %{x}<extra></extra>",
-        showlegend: false
+        showlegend: false,
+        marker: { color: "#6b7280" }
       }], {
         height: 320,
-        margin: { t: 10, r: 30, b: 30, l: 160 },
+        margin: { t: 10, r: 30, b: 30, l: 140 },
         xaxis: { title: "Quantidade", rangemode: "tozero", automargin: true },
         yaxis: { automargin: true }
       }, { displayModeBar:false, responsive:true });
@@ -1018,6 +1041,7 @@
         const inst = String(instRaw || "").trim();
 
         if (!byUF.has(uf)) byUF.set(uf, { ids: new Set(), inst: new Set() });
+
         const bucket = byUF.get(uf);
         bucket.ids.add(id);
         if (inst) bucket.inst.add(inst);
@@ -1115,8 +1139,8 @@
 
             let rows = res.data || [];
             rows = rows.filter(r => Object.values(r || {}).some(v => String(v ?? "").trim() !== ""));
-            if (!rows.length) return reject(new Error("CSV vazio ou não encontrado"));
 
+            if (!rows.length) return reject(new Error("CSV vazio ou não encontrado"));
             resolve(rows);
           },
           error: (err) => reject(err)
@@ -1127,13 +1151,13 @@
 
       populateFilterOptions(tbl);
 
-      // gráficos usam base completa
+      // gráficos + mapa usam base completa (não filtrada)
       buildStatusDonut(tbl);
       buildVencBar(tbl);
       buildBrazilMap(tbl);
       buildDiretoriaBar(tbl);
 
-      // tabela + KPIs (com filtro)
+      // primeira renderização
       applyFilters();
     })().catch(err => {
       console.error("[INIT] ERRO:", err);
