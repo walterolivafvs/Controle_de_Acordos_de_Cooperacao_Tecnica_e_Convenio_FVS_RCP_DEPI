@@ -323,6 +323,10 @@
         <div class="card">
           <div class="kpiLabel">Arquivados</div>
           <div class="value" id="kpi_arquivados">—</div>
+
+        <div class="card">
+          <div class="kpiLabel">ACTs Concluídos</div>
+          <div class="value" id="kpi_concluidos">—</div>
         </div>
       </div>
 
@@ -816,6 +820,7 @@
     const kpi_alerta = document.getElementById("kpi_alerta");
     const kpi_semdata = document.getElementById("kpi_semdata");
     const kpi_arquivados = document.getElementById("kpi_arquivados");
+    const kpi_concluidos = document.getElementById("kpi_concluidos");
 
     function updateKPIs(rows) {
       const arquivados = rows.filter(r => computeStatus(r) === "ARQUIVADO").length;
@@ -829,6 +834,30 @@
       kpi_vigentes.textContent = counts["VIGENTE"];
       kpi_alerta.textContent = counts["ALERTA 180 DIAS"];
       kpi_semdata.textContent = counts["SEM DATA"];
+
+      function updateKPIs(rows) {
+  const arquivados = rows.filter(r => computeStatus(r) === "ARQUIVADO").length;
+  kpi_arquivados.textContent = arquivados;
+
+  const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+  const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "SEM DATA": 0 };
+  base.forEach(r => { counts[computeStatus(r)]++; });
+
+  kpi_total.textContent = base.length;
+  kpi_vigentes.textContent = counts["VIGENTE"];
+  kpi_alerta.textContent = counts["ALERTA 180 DIAS"];
+  kpi_semdata.textContent = counts["SEM DATA"];
+
+  // =========================
+  // KPI CONCLUÍDOS
+  // =========================
+  const concluidos = base.filter(r => {
+    const exec = String(getFirst(r, ["status_execucao"]) || "").toUpperCase();
+    return exec.includes("CONCL");
+  }).length;
+
+  kpi_concluidos.textContent = concluidos;
+}
     }
 
     function buildStatusDonut(rows) {
