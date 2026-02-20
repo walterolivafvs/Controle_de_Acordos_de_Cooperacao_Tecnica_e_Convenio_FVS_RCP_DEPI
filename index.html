@@ -302,7 +302,6 @@
           <option value="VIGENTE">VIGENTE</option>
           <option value="ALERTA 180 DIAS">ALERTA 180 DIAS</option>
           <option value="SEM DATA">SEM DATA</option>
-          <option value="ARQUIVADO">ARQUIVADO</option>
         </select>
       </div>
 
@@ -337,15 +336,6 @@
         <div class="card">
           <div class="kpiLabel">Alerta (≤180 dias)</div>
           <div class="value" id="kpi_alerta">—</div>
-        </div>
-        <div class="card">
-          <div class="kpiLabel">Sem data</div>
-          <div class="value" id="kpi_semdata">—</div>
-        </div>
-
-        <div class="card">
-          <div class="kpiLabel">Arquivados</div>
-          <div class="value" id="kpi_arquivados">—</div>
         </div>
       </div>
 
@@ -837,8 +827,6 @@
     const kpi_total = document.getElementById("kpi_total");
     const kpi_vigentes = document.getElementById("kpi_vigentes");
     const kpi_alerta = document.getElementById("kpi_alerta");
-    const kpi_semdata = document.getElementById("kpi_semdata");
-    const kpi_arquivados = document.getElementById("kpi_arquivados");
 
     // ✅ sidebar concluídos
     const kpi_concluidos_sidebar = document.getElementById("kpi_concluidos_sidebar");
@@ -858,7 +846,6 @@
       kpi_total.textContent = base.length;
       kpi_vigentes.textContent = counts["VIGENTE"];
       kpi_alerta.textContent = counts["ALERTA 180 DIAS"];
-      kpi_semdata.textContent = counts["SEM DATA"];
 
       // =========================
       // KPI CONCLUÍDOS (sidebar)
