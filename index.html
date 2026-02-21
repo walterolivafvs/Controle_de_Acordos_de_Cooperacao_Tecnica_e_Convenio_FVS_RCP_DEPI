@@ -295,15 +295,14 @@
       </div>
 
       <div class="field">
-  <button id="resetFilters" class="btn" style="width:100%;">Ver todos</button>
-</div>
+        <button id="resetFilters" class="btn" style="width:100%;">Ver todos</button>
+      </div>
 
-<div class="field">
-  <button id="btnConcluidos" class="btn" style="width:100%;">ACTs Concluídos</button>
-</div>
+      <div class="field">
+        <button id="btnConcluidos" class="btn" style="width:100%;">ACTs Concluídos</button>
+      </div>
 
-<div id="filterHint" class="filterHint"></div>
-
+      <div id="filterHint" class="filterHint"></div>
     </aside>
 
     <main class="main">
@@ -348,7 +347,6 @@
         </div>
       </div>
 
-      <!-- ✅ MAPA + DIRETORIAS NA MESMA ROW (lado a lado) -->
       <div class="row" style="margin-top:14px;">
         <div class="panel">
           <h3>Mapa (parcerias por UF)</h3>
@@ -372,23 +370,23 @@
         </div>
 
         <details style="margin-top:10px;">
-  <summary class="btn" style="display:inline-block; user-select:none;">
-    Ver estrutura organizacional
-  </summary>
+          <summary class="btn" style="display:inline-block; user-select:none;">
+            Ver estrutura organizacional
+          </summary>
 
-  <div class="legenda" style="margin-top:10px; width:100%;">
-    <strong>Diretorias</strong><br>
-    <span><strong>DEPI</strong> – Diretoria de Ensino, Pesquisa e Inovação</span><br>
-    <span><strong>DVACD</strong> – Diretoria de Vigilância Ambiental e Controle de Doenças</span><br>
-    <span><strong>DVE</strong> – Diretoria de Vigilância Epidemiológica</span><br>
-    <span><strong>LACEN</strong> – Laboratório Público Central</span><br><br>
+          <div class="legenda" style="margin-top:10px; width:100%;">
+            <strong>Diretorias</strong><br>
+            <span><strong>DEPI</strong> – Diretoria de Ensino, Pesquisa e Inovação</span><br>
+            <span><strong>DVACD</strong> – Diretoria de Vigilância Ambiental e Controle de Doenças</span><br>
+            <span><strong>DVE</strong> – Diretoria de Vigilância Epidemiológica</span><br>
+            <span><strong>LACEN</strong> – Laboratório Público Central</span><br><br>
 
-    <strong>Gerências</strong><br>
-    <span><strong>GPAVS</strong> – Gerência de Pesquisa Aplicada a Vigilância em Saúde</span><br>
-    <span><strong>SGENTO</strong> – Subgerência de Entomologia</span><br>
-    <span><strong>SASS</strong> – Sala de Análise de Situação de Saúde</span>
-  </div>
-</details>
+            <strong>Gerências</strong><br>
+            <span><strong>GPAVS</strong> – Gerência de Pesquisa Aplicada a Vigilância em Saúde</span><br>
+            <span><strong>SGENTO</strong> – Subgerência de Entomologia</span><br>
+            <span><strong>SASS</strong> – Sala de Análise de Situação de Saúde</span>
+          </div>
+        </details>
 
         <div class="toolbar">
           <input id="search" placeholder="Buscar (identificação, instituição, processo, status...)" />
@@ -536,36 +534,51 @@
       return "#16a34a";
     }
 
+    // ✅ ACTs concluídos (pelo status_execucao do CSV)
+    function isConcluido(row) {
+      const exec = String(getFirst(row, [
+        "status_execucao",
+        "status_execução",
+        "situacao_execucao",
+        "situação_execucao",
+        "andamento",
+        "execucao",
+        "execução"
+      ]) || "").trim().toUpperCase();
+
+      return exec.includes("CONCL") || exec.includes("FINALIZ");
+    }
+
     // =========================
     // Estado
     // =========================
     let tbl = [];
     let activeMonth = null;
+    let showOnlyConcluidos = false;
 
     // =========================
-    // Filtros
+    // Elementos
     // =========================
     const searchEl = document.getElementById("search");
     const resetBtnEl = document.getElementById("resetFilters");
     const btnConcluidosEl = document.getElementById("btnConcluidos");
-
-btnConcluidosEl.addEventListener("click", () => {
-  activeMonth = null;
-  filterYearEl.value = "";
-  filterTipoEl.value = "";
-  filterInstEl.value = "";
-  filterUFEl.value = "";
-  filterStatusEl.value = "ARQUIVADO";
-  searchEl.value = "";
-  applyFilters();
-});
     const hintEl = document.getElementById("filterHint");
+
     const filterYearEl = document.getElementById("filterYear");
     const filterTipoEl = document.getElementById("filterTipo");
     const filterStatusEl = document.getElementById("filterStatus");
     const filterInstEl = document.getElementById("filterInst");
     const filterUFEl = document.getElementById("filterUF");
 
+    const tbodyEl = document.getElementById("tbody");
+
+    const kpi_total = document.getElementById("kpi_total");
+    const kpi_vigentes = document.getElementById("kpi_vigentes");
+    const kpi_alerta = document.getElementById("kpi_alerta");
+
+    // =========================
+    // Filtros (populate)
+    // =========================
     function populateFilterOptions(rows) {
       const years = new Set();
       rows.forEach(r => {
@@ -609,127 +622,9 @@ btnConcluidosEl.addEventListener("click", () => {
         ufsSorted.map(uf => `<option value="${uf}">${uf}</option>`).join("");
     }
 
-
-    function applyFilters() {
-  const q = norm(searchEl.value);
-  const year = filterYearEl.value;
-  const tipo = filterTipoEl.value;
-  const statusSel = filterStatusEl.value;
-  const instSel = filterInstEl.value;
-  const ufSel = filterUFEl.value;
-
-  let rows = tbl;
-
-  // ✅ REGRA FIXA: arquivados nunca entram no painel
-  rows = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
-
-  // ✅ MODO "CONCLUÍDOS": filtra pelo status_execucao (CONCL / FINALIZ)
-  if (showOnlyConcluidos) {
-    rows = rows.filter(isConcluido);
-  }
-
-  if (activeMonth) {
-    rows = rows.filter(r => {
-      const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
-      const d = parseDateAny(rawVenc);
-      if (!d) return false;
-      return monthLabelFromDate(d) === activeMonth;
-    });
-  }
-
-  if (year) {
-    rows = rows.filter(r => {
-      const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
-      const d = parseDateAny(rawVenc);
-      if (!d) return false;
-      return String(d.getFullYear()) === year;
-    });
-  }
-
-  if (tipo) {
-    rows = rows.filter(r => String(getFirst(r, ["tipo_instrumento","Tipo","tipo"]) || "").trim() === tipo);
-  }
-
-  if (instSel) {
-    rows = rows.filter(r => {
-      const inst = String(getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) || "").trim();
-      return inst === instSel;
-    });
-  }
-
-  if (ufSel) {
-    rows = rows.filter(r => getUF(r) === ufSel);
-  }
-
-  if (statusSel) {
-    rows = rows.filter(r => computeStatus(r) === statusSel);
-  }
-
-  if (q) {
-    rows = rows.filter(r => norm(Object.values(r).join(" ")).includes(q));
-  }
-
-  // ✅ considera "concluídos" como filtro ativo também
-  const anyFilter = Boolean(showOnlyConcluidos || activeMonth || q || year || tipo || statusSel || instSel || ufSel);
-
-  if (anyFilter) {
-    resetBtnEl.classList.add("active");
-    resetBtnEl.textContent = "Ver todos (filtro ativo)";
-  } else {
-    resetBtnEl.classList.remove("active");
-    resetBtnEl.textContent = "Ver todos";
-  }
-
-  const hints = [];
-  if (showOnlyConcluidos) hints.push("somente concluídos");
-  if (activeMonth) hints.push(`mês: ${activeMonth}`);
-  if (year) hints.push(`ano: ${year}`);
-  if (tipo) hints.push(`tipo: ${tipo}`);
-  if (instSel) hints.push(`instituição: ${instSel}`);
-  if (ufSel) hints.push(`UF: ${ufSel}`);
-  if (statusSel) hints.push(`status: ${statusSel}`);
-  if (q) hints.push(`busca`);
-
-  hintEl.textContent = hints.length
-    ? `Filtro ativo → ${hints.join(" • ")}. (Clique no mesmo mês no gráfico para limpar o mês.)`
-    : "";
-
-  render(rows);
-  updateKPIs(rows);
-}
-
-resetBtnEl.addEventListener("click", () => {
-  // ✅ volta para o modo normal (não concluídos)
-  showOnlyConcluidos = false;
-
-  activeMonth = null;
-  searchEl.value = "";
-  filterYearEl.value = "";
-  filterTipoEl.value = "";
-  filterStatusEl.value = "";
-  filterInstEl.value = "";
-  filterUFEl.value = "";
-  applyFilters();
-});
-
-// ✅ clique no botão "ACTs Concluídos"
-btnConcluidosEl.addEventListener("click", () => {
-  showOnlyConcluidos = true;
-  applyFilters();
-});
-
-searchEl.addEventListener("input", applyFilters);
-filterYearEl.addEventListener("change", applyFilters);
-filterTipoEl.addEventListener("change", applyFilters);
-filterStatusEl.addEventListener("change", applyFilters);
-filterInstEl.addEventListener("change", applyFilters);
-filterUFEl.addEventListener("change", applyFilters);
-
     // =========================
-    // Tabela
+    // Render Tabela
     // =========================
-    const tbodyEl = document.getElementById("tbody");
-
     function render(rows) {
       tbodyEl.innerHTML = "";
 
@@ -765,8 +660,15 @@ filterUFEl.addEventListener("change", applyFilters);
         const repasse       = getFirst(r, ["repasse_financeiro","repasse","valor_repasse"]);
 
         const dtAss  = formatDateBR(getFirst(r, ["data_da_assinatura","Data da Assinatura","data_assinatura"]));
-        const dtDoe = getFirst(r, ["numero_extrato_publicacao","numero_extrato_publicado", "extrato_publicacao", "extrato","Extrato (nº)","publicacao_doe","Publicação DOE"]);        const linkDoe = getFirst(r, ["link_publicacao_doe","link publicacao_doe_doe","link_doe","publicacao_doe_link"]);
 
+        // ✅ "Publicação DOE" deve pegar o número do extrato (e também aceitar publicacao_doe)
+        const dtDoe = getFirst(r, [
+          "publicacao_doe", "Publicação DOE",
+          "numero_extrato_publicado", "numero_extrato_publicacao",
+          "extrato_publicacao", "Extrato (nº)", "extrato"
+        ]);
+
+        const linkDoe = getFirst(r, ["link_publicacao_doe","link_doe","publicacao_doe_link"]);
         const estado = getFirst(r, ["estado","Estado"]);
 
         const objetivoTexto = getFirst(r, ["objetivo_resumido","objetivo_geral","objeto","Objeto"]);
@@ -838,36 +740,30 @@ filterUFEl.addEventListener("change", applyFilters);
     }
 
     // =========================
-    // KPIs e Gráficos
+    // KPIs
     // =========================
-    const kpi_total = document.getElementById("kpi_total");
-    const kpi_vigentes = document.getElementById("kpi_vigentes");
-    const kpi_alerta = document.getElementById("kpi_alerta");
-
     function updateKPIs(rows) {
+      const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO"); // arquivados não entram
+      let vig = 0, alt = 0;
 
-  const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+      base.forEach(r => {
+        const st = computeStatus(r);
+        if (st === "VIGENTE") vig++;
+        if (st === "ALERTA 180 DIAS") alt++;
+      });
 
-  const counts = {
-    "VIGENTE": 0,
-    "ALERTA 180 DIAS": 0
-  };
+      kpi_total.textContent = String(base.length);
+      kpi_vigentes.textContent = String(vig);
+      kpi_alerta.textContent = String(alt);
+    }
 
-  base.forEach(r => {
-    const st = computeStatus(r);
-    if (st === "VIGENTE") counts["VIGENTE"]++;
-    if (st === "ALERTA 180 DIAS") counts["ALERTA 180 DIAS"]++;
-  });
-
-  kpi_total.textContent = base.length;
-  kpi_vigentes.textContent = counts["VIGENTE"];
-  kpi_alerta.textContent = counts["ALERTA 180 DIAS"];
-}
-
+    // =========================
+    // Gráficos
+    // =========================
     function buildStatusDonut(rows) {
-      const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+      const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
       const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "SEM DATA": 0 };
-      base.forEach(r => { counts[computeStatus(r)]++; });
+      base.forEach(r => { counts[computeStatus(r)] = (counts[computeStatus(r)] || 0) + 1; });
 
       Plotly.newPlot("chart_status", [{
         type: "pie",
@@ -877,10 +773,7 @@ filterUFEl.addEventListener("change", applyFilters);
         textinfo: "none",
         texttemplate: "<b>%{value}</b><br><b>%{percent}</b>",
         textposition: "inside",
-        marker: {
-          colors: ["#16a34a", "#f59e0b", "#9ca3af"],
-          line: { color: "#ffffff", width: 3 }
-        },
+        marker: { colors: ["#16a34a", "#f59e0b", "#9ca3af"], line: { color: "#ffffff", width: 3 } },
         sort: false,
         showlegend: false
       }], {
@@ -890,7 +783,7 @@ filterUFEl.addEventListener("change", applyFilters);
     }
 
     function buildVencBar(rows) {
-      const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+      const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
 
       const monthMap = new Map();
       base.forEach(r => {
@@ -943,26 +836,17 @@ filterUFEl.addEventListener("change", applyFilters);
       });
     }
 
-    // ✅ AGORA GLOBAL (fora de buildVencBar) — NÃO QUEBRA O SCRIPT
     function buildDiretoriaBar(rows) {
-      const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+      const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
 
       const byDir = new Map();
       base.forEach(r => {
-        const dir = String(getFirst(r, [
-          "diretoria_responsavel",
-          "Diretoria Responsável",
-          "setor_lotacao",
-          "Setor",
-          "setor"
-        ]) || "").trim();
+        const dir = String(getFirst(r, ["diretoria_responsavel","Diretoria","setor_lotacao","Setor","setor"]) || "").trim();
         if (!dir) return;
         byDir.set(dir, (byDir.get(dir) || 0) + 1);
       });
 
       const chartEl = document.getElementById("chart_dir");
-      if (!chartEl) return;
-
       if (byDir.size === 0) {
         Plotly.purge(chartEl);
         chartEl.innerHTML = `<div class="muted">Sem dados de diretoria para plotar.</div>`;
@@ -978,7 +862,7 @@ filterUFEl.addEventListener("change", applyFilters);
         orientation: "h",
         y,
         x,
-        marker: { color: "#6b7280" },  /* ✅ cor sugerida: azul institucional */
+        marker: { color: "#6b7280" },
         text: x.map(v => String(v)),
         textposition: "outside",
         cliponaxis: false,
@@ -993,14 +877,12 @@ filterUFEl.addEventListener("change", applyFilters);
     }
 
     function buildBrazilMap(rows) {
-      rows = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+      rows = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
 
       const seen = new Set();
       const uniqueRows = [];
       rows.forEach(r => {
-        const id =
-          String(getFirst(r, ["id_instrumento","ID","identificacao","Identificação","numero_processo","Processo","processo"]) || "")
-            .trim();
+        const id = String(getFirst(r, ["id_instrumento","ID","identificacao","Identificação","numero_processo","Processo","processo"]) || "").trim();
         if (!id) return;
         if (seen.has(id)) return;
         seen.add(id);
@@ -1013,9 +895,7 @@ filterUFEl.addEventListener("change", applyFilters);
         const uf = getUF(r);
         if (!uf) return;
 
-        const id =
-          String(getFirst(r, ["id_instrumento","ID","identificacao","Identificação","numero_processo","Processo","processo"]) || "")
-            .trim();
+        const id = String(getFirst(r, ["id_instrumento","ID","identificacao","Identificação","numero_processo","Processo","processo"]) || "").trim();
         if (!id) return;
 
         const instRaw = getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]);
@@ -1026,10 +906,6 @@ filterUFEl.addEventListener("change", applyFilters);
         bucket.ids.add(id);
         if (inst) bucket.inst.add(inst);
       });
-
-      if (byUF.size === 0) {
-        byUF.set("AM", { ids: new Set(["—"]), inst: new Set(["—"]) });
-      }
 
       const ufCoords = {
         AC: [-8.77, -70.55], AL: [-9.57, -36.78], AM: [-3.47, -65.10], AP: [ 1.41, -51.77],
@@ -1068,8 +944,6 @@ filterUFEl.addEventListener("change", applyFilters);
       });
 
       const chartEl = document.getElementById("chart_map");
-      if (!chartEl) return;
-
       Plotly.newPlot(chartEl, [{
         type: "scattergeo",
         lat: lats,
@@ -1079,11 +953,7 @@ filterUFEl.addEventListener("change", applyFilters);
         marker: { size: sizes, opacity: 0.85, color: "#111" },
         showlegend: false,
         hovertemplate: "%{text}<extra></extra>",
-        hoverlabel: {
-          bgcolor: "#ffffff",
-          bordercolor: "#dddddd",
-          font: { color: "#111111", size: 12 }
-        }
+        hoverlabel: { bgcolor: "#ffffff", bordercolor: "#dddddd", font: { color: "#111111", size: 12 } }
       }], {
         height: 320,
         margin: { t: 10, r: 10, b: 10, l: 10 },
@@ -1103,12 +973,132 @@ filterUFEl.addEventListener("change", applyFilters);
     }
 
     // =========================
+    // applyFilters
+    // =========================
+    function applyFilters() {
+      const q = norm(searchEl.value);
+      const year = filterYearEl.value;
+      const tipo = filterTipoEl.value;
+      const statusSel = filterStatusEl.value;
+      const instSel = filterInstEl.value;
+      const ufSel = filterUFEl.value;
+
+      let rows = tbl.slice();
+
+      // ✅ arquivados não aparecem no painel
+      rows = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+
+      // ✅ ACTs concluídos
+      if (showOnlyConcluidos) {
+        rows = rows.filter(r => isConcluido(r));
+      }
+
+      if (activeMonth) {
+        rows = rows.filter(r => {
+          const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
+          const d = parseDateAny(rawVenc);
+          if (!d) return false;
+          return monthLabelFromDate(d) === activeMonth;
+        });
+      }
+
+      if (year) {
+        rows = rows.filter(r => {
+          const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
+          const d = parseDateAny(rawVenc);
+          if (!d) return false;
+          return String(d.getFullYear()) === year;
+        });
+      }
+
+      if (tipo) {
+        rows = rows.filter(r => String(getFirst(r, ["tipo_instrumento","Tipo","tipo"]) || "").trim() === tipo);
+      }
+
+      if (instSel) {
+        rows = rows.filter(r => {
+          const inst = String(getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) || "").trim();
+          return inst === instSel;
+        });
+      }
+
+      if (ufSel) {
+        rows = rows.filter(r => getUF(r) === ufSel);
+      }
+
+      if (statusSel) {
+        rows = rows.filter(r => computeStatus(r) === statusSel);
+      }
+
+      if (q) {
+        rows = rows.filter(r => norm(Object.values(r).join(" ")).includes(q));
+      }
+
+      const anyFilter = Boolean(showOnlyConcluidos || activeMonth || q || year || tipo || statusSel || instSel || ufSel);
+
+      if (anyFilter) {
+        resetBtnEl.classList.add("active");
+        resetBtnEl.textContent = "Ver todos (filtro ativo)";
+      } else {
+        resetBtnEl.classList.remove("active");
+        resetBtnEl.textContent = "Ver todos";
+      }
+
+      const hints = [];
+      if (showOnlyConcluidos) hints.push("ACTs concluídos");
+      if (activeMonth) hints.push(`mês: ${activeMonth}`);
+      if (year) hints.push(`ano: ${year}`);
+      if (tipo) hints.push(`tipo: ${tipo}`);
+      if (instSel) hints.push(`instituição: ${instSel}`);
+      if (ufSel) hints.push(`UF: ${ufSel}`);
+      if (statusSel) hints.push(`status: ${statusSel}`);
+      if (q) hints.push(`busca`);
+
+      hintEl.textContent = hints.length
+        ? `Filtro ativo → ${hints.join(" • ")}. (Clique no mesmo mês no gráfico para limpar o mês.)`
+        : "";
+
+      render(rows);
+      updateKPIs(rows);
+    }
+
+    // =========================
+    // Listeners
+    // =========================
+    resetBtnEl.addEventListener("click", () => {
+      activeMonth = null;
+      showOnlyConcluidos = false;
+      btnConcluidosEl.classList.remove("active");
+
+      searchEl.value = "";
+      filterYearEl.value = "";
+      filterTipoEl.value = "";
+      filterStatusEl.value = "";
+      filterInstEl.value = "";
+      filterUFEl.value = "";
+
+      applyFilters();
+    });
+
+    btnConcluidosEl.addEventListener("click", () => {
+      showOnlyConcluidos = !showOnlyConcluidos;
+      btnConcluidosEl.classList.toggle("active", showOnlyConcluidos);
+      applyFilters();
+    });
+
+    searchEl.addEventListener("input", applyFilters);
+    filterYearEl.addEventListener("change", applyFilters);
+    filterTipoEl.addEventListener("change", applyFilters);
+    filterStatusEl.addEventListener("change", applyFilters);
+    filterInstEl.addEventListener("change", applyFilters);
+    filterUFEl.addEventListener("change", applyFilters);
+
+    // =========================
     // Init
     // =========================
     (async function init() {
       const parsed = await new Promise((resolve, reject) => {
         const csvNoCache = CSV_URL + "?v=" + Date.now();
-
         Papa.parse(csvNoCache, {
           download: true,
           header: true,
@@ -1116,11 +1106,9 @@ filterUFEl.addEventListener("change", applyFilters);
           transformHeader: (h) => String(h || "").replace(/^\uFEFF/, "").trim(),
           complete: (res) => {
             if (res.errors && res.errors.length) console.warn("PapaParse:", res.errors);
-
             let rows = res.data || [];
             rows = rows.filter(r => Object.values(r || {}).some(v => String(v ?? "").trim() !== ""));
             if (!rows.length) return reject(new Error("CSV vazio ou não encontrado"));
-
             resolve(rows);
           },
           error: (err) => reject(err)
@@ -1131,13 +1119,14 @@ filterUFEl.addEventListener("change", applyFilters);
 
       populateFilterOptions(tbl);
 
-      // gráficos usam base completa
-      buildStatusDonut(tbl);
-      buildVencBar(tbl);
-      buildBrazilMap(tbl);
-      buildDiretoriaBar(tbl);
+      // gráficos usam base completa (mas sem arquivados)
+      const baseCharts = tbl.filter(r => computeStatus(r) !== "ARQUIVADO");
+      buildStatusDonut(baseCharts);
+      buildVencBar(baseCharts);
+      buildBrazilMap(baseCharts);
+      buildDiretoriaBar(baseCharts);
 
-      // tabela + KPIs (com filtro)
+      // tabela + KPIs
       applyFilters();
     })().catch(err => {
       console.error("[INIT] ERRO:", err);
