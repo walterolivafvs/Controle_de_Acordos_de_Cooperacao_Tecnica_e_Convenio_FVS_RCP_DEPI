@@ -609,97 +609,121 @@ btnConcluidosEl.addEventListener("click", () => {
         ufsSorted.map(uf => `<option value="${uf}">${uf}</option>`).join("");
     }
 
+
     function applyFilters() {
-      const q = norm(searchEl.value);
-      const year = filterYearEl.value;
-      const tipo = filterTipoEl.value;
-      const statusSel = filterStatusEl.value;
-      const instSel = filterInstEl.value;
-      const ufSel = filterUFEl.value;
+  const q = norm(searchEl.value);
+  const year = filterYearEl.value;
+  const tipo = filterTipoEl.value;
+  const statusSel = filterStatusEl.value;
+  const instSel = filterInstEl.value;
+  const ufSel = filterUFEl.value;
 
-      let rows = tbl;
+  let rows = tbl;
 
-      if (activeMonth) {
-        rows = rows.filter(r => {
-          const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
-          const d = parseDateAny(rawVenc);
-          if (!d) return false;
-          return monthLabelFromDate(d) === activeMonth;
-        });
-      }
+  // ✅ REGRA FIXA: arquivados nunca entram no painel
+  rows = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
 
-      if (year) {
-        rows = rows.filter(r => {
-          const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
-          const d = parseDateAny(rawVenc);
-          if (!d) return false;
-          return String(d.getFullYear()) === year;
-        });
-      }
+  // ✅ MODO "CONCLUÍDOS": filtra pelo status_execucao (CONCL / FINALIZ)
+  if (showOnlyConcluidos) {
+    rows = rows.filter(isConcluido);
+  }
 
-      if (tipo) {
-        rows = rows.filter(r => String(getFirst(r, ["tipo_instrumento","Tipo","tipo"]) || "").trim() === tipo);
-      }
-
-      if (instSel) {
-        rows = rows.filter(r => {
-          const inst = String(getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) || "").trim();
-          return inst === instSel;
-        });
-      }
-
-      if (ufSel) {
-        rows = rows.filter(r => getUF(r) === ufSel);
-      }
-
-      if (statusSel) {
-        rows = rows.filter(r => computeStatus(r) === statusSel);
-      }
-
-      if (q) {
-        rows = rows.filter(r => norm(Object.values(r).join(" ")).includes(q));
-      }
-
-      const anyFilter = Boolean(activeMonth || q || year || tipo || statusSel || instSel || ufSel);
-      if (anyFilter) {
-        resetBtnEl.classList.add("active");
-        resetBtnEl.textContent = "Ver todos (filtro ativo)";
-      } else {
-        resetBtnEl.classList.remove("active");
-        resetBtnEl.textContent = "Ver todos";
-      }
-
-      const hints = [];
-      if (activeMonth) hints.push(`mês: ${activeMonth}`);
-      if (year) hints.push(`ano: ${year}`);
-      if (tipo) hints.push(`tipo: ${tipo}`);
-      if (instSel) hints.push(`instituição: ${instSel}`);
-      if (ufSel) hints.push(`UF: ${ufSel}`);
-      if (statusSel) hints.push(`status: ${statusSel}`);
-      if (q) hints.push(`busca`);
-      hintEl.textContent = hints.length ? `Filtro ativo → ${hints.join(" • ")}. (Clique no mesmo mês no gráfico para limpar o mês.)` : "";
-
-      render(rows);
-      updateKPIs(rows);
-    }
-
-    resetBtnEl.addEventListener("click", () => {
-      activeMonth = null;
-      searchEl.value = "";
-      filterYearEl.value = "";
-      filterTipoEl.value = "";
-      filterStatusEl.value = "";
-      filterInstEl.value = "";
-      filterUFEl.value = "";
-      applyFilters();
+  if (activeMonth) {
+    rows = rows.filter(r => {
+      const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
+      const d = parseDateAny(rawVenc);
+      if (!d) return false;
+      return monthLabelFromDate(d) === activeMonth;
     });
+  }
 
-    searchEl.addEventListener("input", applyFilters);
-    filterYearEl.addEventListener("change", applyFilters);
-    filterTipoEl.addEventListener("change", applyFilters);
-    filterStatusEl.addEventListener("change", applyFilters);
-    filterInstEl.addEventListener("change", applyFilters);
-    filterUFEl.addEventListener("change", applyFilters);
+  if (year) {
+    rows = rows.filter(r => {
+      const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
+      const d = parseDateAny(rawVenc);
+      if (!d) return false;
+      return String(d.getFullYear()) === year;
+    });
+  }
+
+  if (tipo) {
+    rows = rows.filter(r => String(getFirst(r, ["tipo_instrumento","Tipo","tipo"]) || "").trim() === tipo);
+  }
+
+  if (instSel) {
+    rows = rows.filter(r => {
+      const inst = String(getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) || "").trim();
+      return inst === instSel;
+    });
+  }
+
+  if (ufSel) {
+    rows = rows.filter(r => getUF(r) === ufSel);
+  }
+
+  if (statusSel) {
+    rows = rows.filter(r => computeStatus(r) === statusSel);
+  }
+
+  if (q) {
+    rows = rows.filter(r => norm(Object.values(r).join(" ")).includes(q));
+  }
+
+  // ✅ considera "concluídos" como filtro ativo também
+  const anyFilter = Boolean(showOnlyConcluidos || activeMonth || q || year || tipo || statusSel || instSel || ufSel);
+
+  if (anyFilter) {
+    resetBtnEl.classList.add("active");
+    resetBtnEl.textContent = "Ver todos (filtro ativo)";
+  } else {
+    resetBtnEl.classList.remove("active");
+    resetBtnEl.textContent = "Ver todos";
+  }
+
+  const hints = [];
+  if (showOnlyConcluidos) hints.push("somente concluídos");
+  if (activeMonth) hints.push(`mês: ${activeMonth}`);
+  if (year) hints.push(`ano: ${year}`);
+  if (tipo) hints.push(`tipo: ${tipo}`);
+  if (instSel) hints.push(`instituição: ${instSel}`);
+  if (ufSel) hints.push(`UF: ${ufSel}`);
+  if (statusSel) hints.push(`status: ${statusSel}`);
+  if (q) hints.push(`busca`);
+
+  hintEl.textContent = hints.length
+    ? `Filtro ativo → ${hints.join(" • ")}. (Clique no mesmo mês no gráfico para limpar o mês.)`
+    : "";
+
+  render(rows);
+  updateKPIs(rows);
+}
+
+resetBtnEl.addEventListener("click", () => {
+  // ✅ volta para o modo normal (não concluídos)
+  showOnlyConcluidos = false;
+
+  activeMonth = null;
+  searchEl.value = "";
+  filterYearEl.value = "";
+  filterTipoEl.value = "";
+  filterStatusEl.value = "";
+  filterInstEl.value = "";
+  filterUFEl.value = "";
+  applyFilters();
+});
+
+// ✅ clique no botão "ACTs Concluídos"
+btnConcluidosEl.addEventListener("click", () => {
+  showOnlyConcluidos = true;
+  applyFilters();
+});
+
+searchEl.addEventListener("input", applyFilters);
+filterYearEl.addEventListener("change", applyFilters);
+filterTipoEl.addEventListener("change", applyFilters);
+filterStatusEl.addEventListener("change", applyFilters);
+filterInstEl.addEventListener("change", applyFilters);
+filterUFEl.addEventListener("change", applyFilters);
 
     // =========================
     // Tabela
@@ -741,9 +765,7 @@ btnConcluidosEl.addEventListener("click", () => {
         const repasse       = getFirst(r, ["repasse_financeiro","repasse","valor_repasse"]);
 
         const dtAss  = formatDateBR(getFirst(r, ["data_da_assinatura","Data da Assinatura","data_assinatura"]));
-        const dtDoe  = formatDateBR(getFirst(r, ["data_publicacao_doe","data_publiação doe","data_publicacao_DOE"]));
-        const numExt = getFirst(r, ["numero_extrato_publicacao","número_extrato_publicacao","numero_extrato","extrato_publicacao"]);
-        const linkDoe = getFirst(r, ["link_publicacao_doe","link publicacao_doe_doe","link_doe","publicacao_doe_link"]);
+        const dtDoe = getFirst(r, ["numero_extrato_publicacao","numero_extrato_publicado", "extrato_publicacao", "extrato","Extrato (nº)","publicacao_doe","Publicação DOE"]);        const linkDoe = getFirst(r, ["link_publicacao_doe","link publicacao_doe_doe","link_doe","publicacao_doe_link"]);
 
         const estado = getFirst(r, ["estado","Estado"]);
 
@@ -784,7 +806,6 @@ btnConcluidosEl.addEventListener("click", () => {
 
                 <div class="k">Assinatura:</div><div class="v">${escapeHTML(dtAss || "—")}</div>
                 <div class="k">Publicação DOE:</div><div class="v">${escapeHTML(dtDoe || "—")}</div>
-                <div class="k">Extrato (nº):</div><div class="v">${escapeHTML(numExt || "—")}</div>
                 <div class="k">Link DOE:</div>
                 <div class="v">${
                   linkDoe
