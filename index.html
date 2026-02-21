@@ -91,7 +91,6 @@
       min-width: 380px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.04);
     }
-
     #chart_status, #chart_venc, #chart_map, #chart_dir { width:100%; height:320px; }
 
     .legend-risk {
@@ -203,8 +202,8 @@
     .tbl thead th:nth-child(3),
     .tbl tbody td:nth-child(3){ text-align:left; white-space: normal; }
 
-    .tbl thead th:nth-child(10),
-    .tbl tbody td:nth-child(10){ white-space: normal; word-break: break-word; }
+    .tbl thead th:nth-child(9),
+    .tbl tbody td:nth-child(9){ white-space: normal; word-break: break-word; }
 
     .detailsRow td{ background:#fff; }
     .detailsBox{
@@ -277,6 +276,7 @@
         </select>
       </div>
 
+      <!-- ✅ NOVO: filtro por UF -->
       <div class="field">
         <div class="label">UF</div>
         <select id="filterUF" class="select">
@@ -291,12 +291,24 @@
           <option value="VIGENTE">VIGENTE</option>
           <option value="ALERTA 180 DIAS">ALERTA 180 DIAS</option>
           <option value="SEM DATA">SEM DATA</option>
-</select>
+          <option value="ARQUIVADO">ARQUIVADO</option>
+        </select>
       </div>
 
       <div class="field">
         <button id="resetFilters" class="btn" style="width:100%;">Ver todos</button>
       </div>
+
+      <!-- ✅ NOVO: Concluídos (sidebar) -->
+      <details id="concluidosBox" style="margin-top:10px;">
+        <summary class="btn" style="display:inline-block; user-select:none; width:100%; text-align:center;">
+          ACTs concluídos: <span id="kpi_concluidos_sidebar">—</span>
+        </summary>
+        <div class="legenda" style="margin-top:10px;">
+          <div class="kpiLabel" style="margin-bottom:6px;">Instituições (amostra)</div>
+          <div id="list_concluidos_sidebar" class="muted">—</div>
+        </div>
+      </details>
 
       <div id="filterHint" class="filterHint"></div>
     </aside>
@@ -316,11 +328,13 @@
           <div class="value" id="kpi_alerta">—</div>
         </div>
         <div class="card">
-          
+          <div class="kpiLabel">Sem data</div>
           <div class="value" id="kpi_semdata">—</div>
         </div>
+
+        <!-- ✅ NOVO: KPI Arquivados separado -->
         <div class="card">
-          
+          <div class="kpiLabel">Arquivados</div>
           <div class="value" id="kpi_arquivados">—</div>
         </div>
       </div>
@@ -329,39 +343,24 @@
         <div class="panel">
           <h3>Status de vigência</h3>
           <div id="chart_status"></div>
-
-          <div class="legend-status">
-            <div class="item"><span class="box vig"></span><span>VIGENTE</span></div>
-            <div class="item"><span class="box alt"></span><span>ALERTA 180 DIAS</span></div>
-            <div class="item"><span class="box sem"></span><span>SEM DATA</span></div>
-          </div>
+          <!-- (Legenda removida conforme solicitado) -->
         </div>
 
         <div class="panel">
           <h3>Vencimentos por mês</h3>
-
-          <div class="legend-risk">
-            <div class="item"><span class="box red"></span><span>&lt; 1 ano (crítico)</span></div>
-            <div class="item"><span class="box yellow"></span><span>1–2 anos (atenção)</span></div>
-            <div class="item"><span class="box green"></span><span>&gt; 2 anos (vigência confortável)</span></div>
-            <div class="item"><span class="box gray"></span><span>Sem data</span></div>
-          </div>
-
+          <!-- (Legenda removida conforme solicitado) -->
           <div id="chart_venc"></div>
         </div>
       </div>
 
-      <!-- ✅ MAPA + DIRETORIAS NA MESMA ROW (lado a lado) -->
-      <div class="row" style="margin-top:14px;">
-        <div class="panel">
-          <h3>Mapa (parcerias por UF)</h3>
-          <div id="chart_map"></div>
-        </div>
+      <div class="panel" style="margin-top:14px;">
+        <h3>Mapa (parcerias por UF)</h3>
+        <div id="chart_map"></div>
+      </div>
 
-        <div class="panel">
-          <h3>Diretorias responsáveis (quantitativo)</h3>
-          <div id="chart_dir"></div>
-        </div>
+      <div class="panel" style="margin-top:14px;">
+        <h3>Diretorias responsáveis (quantitativo)</h3>
+        <div id="chart_dir"></div>
       </div>
 
       <div class="panel" style="margin-top:14px;">
@@ -373,25 +372,6 @@
           <span><strong>Convênio</strong> = Convênio</span><br>
           <span><strong>TC</strong> = Termo de Colaboração</span>
         </div>
-
-        <details style="margin-top:10px;">
-  <summary class="btn" style="display:inline-block; user-select:none;">
-    Ver estrutura organizacional
-  </summary>
-
-  <div class="legenda" style="margin-top:10px; width:100%;">
-    <strong>Diretorias</strong><br>
-    <span><strong>DEPI</strong> – Diretoria de Ensino, Pesquisa e Inovação</span><br>
-    <span><strong>DVACD</strong> – Diretoria de Vigilância Ambiental e Controle de Doenças</span><br>
-    <span><strong>DVE</strong> – Diretoria de Vigilância Epidemiológica</span><br>
-    <span><strong>LACEN</strong> – Laboratório Público Central</span><br><br>
-
-    <strong>Gerências</strong><br>
-    <span><strong>GPAVS</strong> – Gerência de Pesquisa Aplicada a Vigilância em Saúde</span><br>
-    <span><strong>SGENTO</strong> – Subgerência de Entomologia</span><br>
-    <span><strong>SASS</strong> – Sala de Análise de Situação de Saúde</span>
-  </div>
-</details>
 
         <div class="toolbar">
           <input id="search" placeholder="Buscar (identificação, instituição, processo, status...)" />
@@ -405,8 +385,7 @@
                   <th>Identificação</th>
                   <th>Tipo</th>
                   <th>Instituição</th>
-                  <th>Diretoria</th>
-                  <th>Gerência</th>
+                  <th>Setor</th>
                   <th>Status</th>
                   <th>Início</th>
                   <th>Vencimento</th>
@@ -427,7 +406,7 @@
     // =========================
     // AJUSTE AQUI
     // =========================
-    const CSV_URL = "./data/tbl_instrumentos.csv";
+    const CSV_URL = "./data/tbl_instrumentos.csv"; // GitHub Pages: caminho relativo
 
     // =========================
     // Helpers
@@ -458,6 +437,7 @@
 
       const s = String(raw).trim().slice(0, 10);
 
+      // dd/mm/yyyy ou dd-mm-yyyy
       let m = s.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
       if (m) {
         const dd = Number(m[1]), mm = Number(m[2]), yy = Number(m[3]);
@@ -465,6 +445,7 @@
         return isNaN(d) ? null : d;
       }
 
+      // yyyy-mm-dd
       m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
       if (m) {
         const yy = Number(m[1]), mm = Number(m[2]), dd = Number(m[3]);
@@ -502,7 +483,7 @@
     }
 
     function getUF(r) {
-      const ufRaw = getFirst(r, ["uf","UF","estado_uf","uf_parceiro"]);
+      const ufRaw = getFirst(r, ["uf","UF","estado","Estado","estado_uf","uf_parceiro"]);
       const uf = String(ufRaw || "").trim().toUpperCase();
       return /^[A-Z]{2}$/.test(uf) ? uf : "";
     }
@@ -555,9 +536,14 @@
     const filterTipoEl = document.getElementById("filterTipo");
     const filterStatusEl = document.getElementById("filterStatus");
     const filterInstEl = document.getElementById("filterInst");
-    const filterUFEl = document.getElementById("filterUF");
+    const filterUFEl = document.getElementById("filterUF"); // ✅ novo
+
+    // ✅ Concluídos (sidebar)
+    const kpi_concluidos_sidebar = document.getElementById("kpi_concluidos_sidebar");
+    const list_concluidos_sidebar = document.getElementById("list_concluidos_sidebar");
 
     function populateFilterOptions(rows) {
+      // Ano (vencimento)
       const years = new Set();
       rows.forEach(r => {
         const rawV = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
@@ -569,6 +555,7 @@
         `<option value="">Todos</option>` +
         yearsSorted.map(y => `<option value="${y}">${y}</option>`).join("");
 
+      // Tipo
       const tipos = new Set();
       rows.forEach(r => {
         const t = String(getFirst(r, ["tipo_instrumento","Tipo","tipo"]) || "").trim();
@@ -579,6 +566,7 @@
         `<option value="">Todos</option>` +
         tiposSorted.map(t => `<option value="${escapeHTML(t)}">${escapeHTML(t)}</option>`).join("");
 
+      // Instituição
       const insts = new Set();
       rows.forEach(r => {
         const inst = String(getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) || "").trim();
@@ -589,6 +577,7 @@
         `<option value="">Todas</option>` +
         instsSorted.map(i => `<option value="${escapeHTML(i)}">${escapeHTML(i)}</option>`).join("");
 
+      // ✅ UF
       const ufs = new Set();
       rows.forEach(r => {
         const uf = getUF(r);
@@ -610,6 +599,7 @@
 
       let rows = tbl;
 
+      // filtro por mês (clique no gráfico de vencimentos)
       if (activeMonth) {
         rows = rows.filter(r => {
           const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
@@ -619,6 +609,7 @@
         });
       }
 
+      // ano
       if (year) {
         rows = rows.filter(r => {
           const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
@@ -628,10 +619,12 @@
         });
       }
 
+      // tipo
       if (tipo) {
         rows = rows.filter(r => String(getFirst(r, ["tipo_instrumento","Tipo","tipo"]) || "").trim() === tipo);
       }
 
+      // instituição
       if (instSel) {
         rows = rows.filter(r => {
           const inst = String(getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) || "").trim();
@@ -639,18 +632,22 @@
         });
       }
 
+      // ✅ UF
       if (ufSel) {
         rows = rows.filter(r => getUF(r) === ufSel);
       }
 
+      // status
       if (statusSel) {
         rows = rows.filter(r => computeStatus(r) === statusSel);
       }
 
+      // busca
       if (q) {
         rows = rows.filter(r => norm(Object.values(r).join(" ")).includes(q));
       }
 
+      // UI: estado do filtro
       const anyFilter = Boolean(activeMonth || q || year || tipo || statusSel || instSel || ufSel);
       if (anyFilter) {
         resetBtnEl.classList.add("active");
@@ -711,8 +708,7 @@
         const venc   = formatDateBR(getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]));
 
         const stat  = computeStatus(r);
-        const diretoria = getFirst(r, ["diretoria_responsavel", "Diretoria", "setor_lotacao", "Setor", "setor"]);
-        const gerencia  = getFirst(r, ["gerencia_responsavel", "Gerência", "gerencia"]);
+        const setor = getFirst(r, ["diretoria_responsavel", "setor_lotacao","Setor","setor"]);
 
         const possuiAditivoRaw = getFirst(r, ["possui_aditivo","aditivo","Aditivo"]);
         const qtdAditivosRaw   = getFirst(r, ["quantos_aditivos","Qtd Aditivos","qtd_aditivos"]);
@@ -736,7 +732,6 @@
         const dtDoe  = formatDateBR(getFirst(r, ["data_publicacao_doe","data_publiação doe","data_publicacao_DOE"]));
         const numExt = getFirst(r, ["numero_extrato_publicacao","número_extrato_publicacao","numero_extrato","extrato_publicacao"]);
         const linkDoe = getFirst(r, ["link_publicacao_doe","link publicacao_doe_doe","link_doe","publicacao_doe_link"]);
-
         const estado = getFirst(r, ["estado","Estado"]);
 
         const objetivoTexto = getFirst(r, ["objetivo_resumido","objetivo_geral","objeto","Objeto"]);
@@ -750,8 +745,7 @@
           <td>${escapeHTML(ident || "—")}</td>
           <td>${escapeHTML(tipo || "—")}</td>
           <td>${escapeHTML(inst || "—")}</td>
-          <td>${escapeHTML(diretoria || "—")}</td>
-          <td>${escapeHTML(gerencia || "—")}</td>
+          <td>${escapeHTML(setor || "—")}</td>
           <td>${escapeHTML(stat || "—")}</td>
           <td>${escapeHTML(inicio || "—")}</td>
           <td>${escapeHTML(venc || "—")}</td>
@@ -765,7 +759,7 @@
         trDetails.className = "detailsRow";
         trDetails.style.display = "none";
         trDetails.innerHTML = `
-          <td colspan="11">
+          <td colspan="10">
             <div class="detailsBox">
               <div class="kv">
                 <div class="k">Coord. parceiro:</div><div class="v">${escapeHTML(coordParceiro || "—")}</div>
@@ -814,14 +808,33 @@
     const kpi_total = document.getElementById("kpi_total");
     const kpi_vigentes = document.getElementById("kpi_vigentes");
     const kpi_alerta = document.getElementById("kpi_alerta");
+    const kpi_semdata = document.getElementById("kpi_semdata");
+    const kpi_arquivados = document.getElementById("kpi_arquivados"); // ✅ novo
 
-    // KPI (sidebar) - ACTs concluídos
-    const kpi_concluidos_sidebar = document.getElementById("kpi_concluidos_sidebar");
-    const btn_concluidos = document.getElementById("btn_concluidos");
-    const list_concluidos_sidebar = document.getElementById("list_concluidos_sidebar");
+    function updateKPIs(rows) {
+      // KPI Arquivados separado (respeita filtros)
+      const arquivados = rows.filter(r => computeStatus(r) === "ARQUIVADO").length;
+      kpi_arquivados.textContent = arquivados;
 
+      // KPIs principais ignoram arquivados
+      const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+
+      const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "SEM DATA": 0 };
+      base.forEach(r => { counts[computeStatus(r)]++; });
+
+      kpi_total.textContent = base.length;
+      kpi_vigentes.textContent = counts["VIGENTE"];
+      kpi_alerta.textContent = counts["ALERTA 180 DIAS"];
+      kpi_semdata.textContent = counts["SEM DATA"];
+    }
+
+    // =========================
+    // Concluídos (sidebar)
+    // =========================
     function updateConcluidosSidebar(rows) {
-      // usa o mesmo universo do painel (ignora ARQUIVADO)
+      if (!kpi_concluidos_sidebar || !list_concluidos_sidebar) return;
+
+      // ignora arquivados
       const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
 
       const concluidosRows = base.filter(r => {
@@ -830,13 +843,11 @@
           "status_execução",
           "situacao_execucao",
           "situação_execucao",
-          "situacao_execução",
-          "situação_execução",
+          "situacao",
+          "situação",
           "andamento",
           "execucao",
-          "execução",
-          "situacao",
-          "situação"
+          "execução"
         ]) || "").toUpperCase();
 
         return exec.includes("CONCL") || exec.includes("FINALIZ");
@@ -844,7 +855,6 @@
 
       kpi_concluidos_sidebar.textContent = concluidosRows.length;
 
-      // lista instituições (únicas, ordenadas)
       const insts = Array.from(new Set(
         concluidosRows
           .map(r => String(getFirst(r, [
@@ -856,37 +866,17 @@
           .filter(Boolean)
       )).sort((a,b) => a.localeCompare(b, "pt-BR"));
 
-      if (!insts.length) {
-        list_concluidos_sidebar.innerHTML = "<div class=\"muted\">—</div>";
-        return;
-      }
-
-      const top = insts.slice(0, 12).map(i => `<li>${escapeHTML(i)}</li>`).join("");
-      list_concluidos_sidebar.innerHTML =
-        `<ul style="margin:6px 0 0; padding-left:18px;">${top}</ul>` +
-        (insts.length > 12 ? `<div class=\"muted\" style=\"margin-top:6px;\">+ ${insts.length - 12} outras</div>` : "");
-    }
-
-    // botão: mostra/esconde lista
-    btn_concluidos.addEventListener("click", () => {
-      const isOpen = list_concluidos_sidebar.style.display !== "none";
-      list_concluidos_sidebar.style.display = isOpen ? "none" : "block";
-    });
-
-function updateKPIs(rows) {
-      // Arquivados ficam fora do painel (não entram nos KPIs/gráficos)
-      const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
-
-      const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "SEM DATA": 0 };
-      base.forEach(r => { counts[computeStatus(r)]++; });
-
-      kpi_total.textContent = base.length;
-      kpi_vigentes.textContent = counts["VIGENTE"];
-      kpi_alerta.textContent = counts["ALERTA 180 DIAS"];
+      list_concluidos_sidebar.innerHTML = insts.length
+        ? `<ul style="margin:6px 0 0; padding-left:18px;">${
+            insts.slice(0, 12).map(i => `<li>${escapeHTML(i)}</li>`).join("")
+          }</ul>` +
+          (insts.length > 12 ? `<div class="muted" style="margin-top:6px;">+ ${insts.length - 12} outras</div>` : "")
+        : `<div class="muted">—</div>`;
     }
 
     function buildStatusDonut(rows) {
       const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+
       const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "SEM DATA": 0 };
       base.forEach(r => { counts[computeStatus(r)]++; });
 
@@ -913,7 +903,7 @@ function updateKPIs(rows) {
     function buildVencBar(rows) {
       const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
 
-      const monthMap = new Map();
+      const monthMap = new Map(); // key -> {count, color}
       base.forEach(r => {
         const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
         const d = parseDateAny(rawVenc);
@@ -964,19 +954,14 @@ function updateKPIs(rows) {
       });
     }
 
-    // ✅ AGORA GLOBAL (fora de buildVencBar) — NÃO QUEBRA O SCRIPT
     function buildDiretoriaBar(rows) {
       const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
 
-      const byDir = new Map();
+      const byDir = new Map(); // dir -> count
       base.forEach(r => {
-        const dir = String(getFirst(r, [
-          "diretoria_responsavel",
-          "Diretoria Responsável",
-          "setor_lotacao",
-          "Setor",
-          "setor"
-        ]) || "").trim();
+        const dir = String(
+          getFirst(r, ["diretoria_responsavel", "setor_lotacao", "Setor", "setor"]) || ""
+        ).trim();
         if (!dir) return;
         byDir.set(dir, (byDir.get(dir) || 0) + 1);
       });
@@ -991,6 +976,7 @@ function updateKPIs(rows) {
       }
 
       const items = Array.from(byDir.entries()).sort((a,b) => b[1] - a[1]);
+
       const y = items.map(([dir]) => dir);
       const x = items.map(([,count]) => count);
 
@@ -999,7 +985,6 @@ function updateKPIs(rows) {
         orientation: "h",
         y,
         x,
-        marker: { color: "#6b7280" },  /* ✅ cor sugerida: azul institucional */
         text: x.map(v => String(v)),
         textposition: "outside",
         cliponaxis: false,
@@ -1007,17 +992,22 @@ function updateKPIs(rows) {
         showlegend: false
       }], {
         height: 320,
-        margin: { t: 10, r: 30, b: 30, l: 160 },
+        margin: { t: 10, r: 30, b: 30, l: 140 },
         xaxis: { title: "Quantidade", rangemode: "tozero", automargin: true },
         yaxis: { automargin: true }
       }, { displayModeBar:false, responsive:true });
     }
 
+    // =========================
+    // MAPA — SOLUÇÃO FINAL (contagem correta)
+    // =========================
     function buildBrazilMap(rows) {
       rows = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
 
+      // 1) DEDUPE GLOBAL (instrumento)
       const seen = new Set();
       const uniqueRows = [];
+
       rows.forEach(r => {
         const id =
           String(getFirst(r, ["id_instrumento","ID","identificacao","Identificação","numero_processo","Processo","processo"]) || "")
@@ -1027,9 +1017,12 @@ function updateKPIs(rows) {
         seen.add(id);
         uniqueRows.push(r);
       });
+
       rows = uniqueRows;
 
-      const byUF = new Map();
+      // 2) AGREGA POR UF com SETs
+      const byUF = new Map(); // uf -> { ids:Set, inst:Set }
+
       rows.forEach(r => {
         const uf = getUF(r);
         if (!uf) return;
@@ -1043,6 +1036,7 @@ function updateKPIs(rows) {
         const inst = String(instRaw || "").trim();
 
         if (!byUF.has(uf)) byUF.set(uf, { ids: new Set(), inst: new Set() });
+
         const bucket = byUF.get(uf);
         bucket.ids.add(id);
         if (inst) bucket.inst.add(inst);
@@ -1052,6 +1046,7 @@ function updateKPIs(rows) {
         byUF.set("AM", { ids: new Set(["—"]), inst: new Set(["—"]) });
       }
 
+      // 3) COORDENADAS (centróides)
       const ufCoords = {
         AC: [-8.77, -70.55], AL: [-9.57, -36.78], AM: [-3.47, -65.10], AP: [ 1.41, -51.77],
         BA: [-12.96, -41.71], CE: [-5.20, -39.53], DF: [-15.83, -47.86], ES: [-19.19, -40.34],
@@ -1062,6 +1057,7 @@ function updateKPIs(rows) {
         SE: [-10.57, -37.45], SP: [-22.19, -48.79], TO: [-10.25, -48.25]
       };
 
+      // 4) ARRAYS PARA PLOT
       const ufs = Array.from(byUF.keys()).sort();
       const lats = [];
       const lons = [];
@@ -1140,8 +1136,8 @@ function updateKPIs(rows) {
 
             let rows = res.data || [];
             rows = rows.filter(r => Object.values(r || {}).some(v => String(v ?? "").trim() !== ""));
-            if (!rows.length) return reject(new Error("CSV vazio ou não encontrado"));
 
+            if (!rows.length) return reject(new Error("CSV vazio ou não encontrado"));
             resolve(rows);
           },
           error: (err) => reject(err)
@@ -1152,13 +1148,13 @@ function updateKPIs(rows) {
 
       populateFilterOptions(tbl);
 
-      // gráficos usam base completa
+      // gráficos + mapa usam a base completa (não filtrada), e a tabela responde ao filtro
       buildStatusDonut(tbl);
       buildVencBar(tbl);
       buildBrazilMap(tbl);
       buildDiretoriaBar(tbl);
 
-      // tabela + KPIs (com filtro)
+      // primeira renderização
       applyFilters();
     })().catch(err => {
       console.error("[INIT] ERRO:", err);
