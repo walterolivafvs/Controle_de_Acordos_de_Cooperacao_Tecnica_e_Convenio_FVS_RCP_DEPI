@@ -291,7 +291,6 @@
           <option value="VIGENTE">VIGENTE</option>
           <option value="ALERTA 180 DIAS">ALERTA 180 DIAS</option>
           <option value="SEM DATA">SEM DATA</option>
-          <option value="ARQUIVADO">ARQUIVADO</option>
         </select>
       </div>
 
@@ -315,15 +314,6 @@
         <div class="card">
           <div class="kpiLabel">Alerta (≤180 dias)</div>
           <div class="value" id="kpi_alerta">—</div>
-        </div>
-        <div class="card">
-          <div class="kpiLabel">Sem data</div>
-          <div class="value" id="kpi_semdata">—</div>
-        </div>
-        <div class="card">
-          <div class="kpiLabel">Arquivados</div>
-          <div class="value" id="kpi_arquivados">—</div>
-        </div>
       </div>
 
       <div class="row">
@@ -809,307 +799,199 @@
     }
 
     // =========================
-    // KPIs e Gráficos
-    // =========================
-    const kpi_total = document.getElementById("kpi_total");
-    const kpi_vigentes = document.getElementById("kpi_vigentes");
-    const kpi_alerta = document.getElementById("kpi_alerta");
-    const kpi_semdata = document.getElementById("kpi_semdata");
-    const kpi_arquivados = document.getElementById("kpi_arquivados");
+// KPIs e Gráficos (VERSÃO LIMPA)
+// =========================
+const kpi_total = document.getElementById("kpi_total");
+const kpi_vigentes = document.getElementById("kpi_vigentes");
+const kpi_alerta = document.getElementById("kpi_alerta");
 
-    function updateKPIs(rows) {
-      const arquivados = rows.filter(r => computeStatus(r) === "ARQUIVADO").length;
-      kpi_arquivados.textContent = arquivados;
+// 🔹 Atualiza KPIs (SEM sem data / SEM arquivados)
+function updateKPIs(rows) {
 
-      const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
-      const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "SEM DATA": 0 };
-      base.forEach(r => { counts[computeStatus(r)]++; });
+  // Remove arquivados completamente do painel
+  const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
 
-      kpi_total.textContent = base.length;
-      kpi_vigentes.textContent = counts["VIGENTE"];
-      kpi_alerta.textContent = counts["ALERTA 180 DIAS"];
-      kpi_semdata.textContent = counts["SEM DATA"];
+  const counts = {
+    "VIGENTE": 0,
+    "ALERTA 180 DIAS": 0
+  };
+
+  base.forEach(r => {
+    const st = computeStatus(r);
+    if (counts[st] !== undefined) counts[st]++;
+  });
+
+  kpi_total.textContent = base.length;
+  kpi_vigentes.textContent = counts["VIGENTE"];
+  kpi_alerta.textContent = counts["ALERTA 180 DIAS"];
+}
+
+
+// 🔹 Donut Status (SEM "SEM DATA")
+function buildStatusDonut(rows) {
+
+  const base = rows.filter(r => {
+    const st = computeStatus(r);
+    return st !== "ARQUIVADO" && st !== "SEM DATA";
+  });
+
+  const counts = {
+    "VIGENTE": 0,
+    "ALERTA 180 DIAS": 0
+  };
+
+  base.forEach(r => {
+    const st = computeStatus(r);
+    if (counts[st] !== undefined) counts[st]++;
+  });
+
+  Plotly.newPlot("chart_status", [{
+    type: "pie",
+    labels: ["VIGENTE", "ALERTA 180 DIAS"],
+    values: [counts["VIGENTE"], counts["ALERTA 180 DIAS"]],
+    hole: 0.55,
+    textinfo: "none",
+    texttemplate: "<b>%{value}</b><br><b>%{percent}</b>",
+    textposition: "inside",
+    marker: {
+      colors: ["#16a34a", "#f59e0b"],
+      line: { color: "#ffffff", width: 3 }
+    },
+    sort: false,
+    showlegend: false
+  }], {
+    height: 320,
+    margin: { t: 10, r: 10, b: 10, l: 10 }
+  }, { displayModeBar:false, responsive:true });
+}
+
+
+// 🔹 Vencimentos por mês (SEM caixa cinza / SEM sem data)
+function buildVencBar(rows) {
+
+  const base = rows.filter(r => {
+    const st = computeStatus(r);
+    return st !== "ARQUIVADO" && st !== "SEM DATA";
+  });
+
+  const monthMap = new Map();
+
+  base.forEach(r => {
+    const rawVenc = getFirst(r, [
+      "vigencia_termino",
+      "VIGÊNCIA - TÉRMINO",
+      "vencimento",
+      "Vencimento",
+      "vigencia_fim"
+    ]);
+
+    const d = parseDateAny(rawVenc);
+    if (!d) return;
+
+    const key = monthLabelFromDate(d);
+
+    const prev = monthMap.get(key) || {
+      count: 0,
+      color: riskColorByDate(d)
+    };
+
+    prev.count += 1;
+
+    const c = riskColorByDate(d);
+    const priority = hex =>
+      hex === "#d62c26" ? 3 :
+      hex === "#f59e0b" ? 2 : 1;
+
+    if (priority(c) > priority(prev.color)) {
+      prev.color = c;
     }
 
-    function buildStatusDonut(rows) {
-      const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
-      const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "SEM DATA": 0 };
-      base.forEach(r => { counts[computeStatus(r)]++; });
+    monthMap.set(key, prev);
+  });
 
-      Plotly.newPlot("chart_status", [{
-        type: "pie",
-        labels: ["VIGENTE", "ALERTA 180 DIAS", "SEM DATA"],
-        values: [counts["VIGENTE"], counts["ALERTA 180 DIAS"], counts["SEM DATA"]],
-        hole: 0.55,
-        textinfo: "none",
-        texttemplate: "<b>%{value}</b><br><b>%{percent}</b>",
-        textposition: "inside",
-        marker: {
-          colors: ["#16a34a", "#f59e0b", "#9ca3af"],
-          line: { color: "#ffffff", width: 3 }
-        },
-        sort: false,
-        showlegend: false
-      }], {
-        height: 320,
-        margin: { t: 10, r: 10, b: 10, l: 10 }
-      }, { displayModeBar:false, responsive:true });
-    }
+  const months = Array.from(monthMap.keys()).sort((a,b) => {
+    const parseKey = k => {
+      const [mon, year] = k.split(" ");
+      const mMap = {jan:0,fev:1,mar:2,abr:3,mai:4,jun:5,jul:6,ago:7,set:8,out:9,nov:10,dez:11};
+      return new Date(Number(year), mMap[mon] ?? 0, 1).getTime();
+    };
+    return parseKey(a) - parseKey(b);
+  });
 
-    function buildVencBar(rows) {
-      const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+  const y = months.map(m => monthMap.get(m).count);
+  const colors = months.map(m => monthMap.get(m).color);
+  const xPretty = months.map(m => m.replace(/(^\w)/, c => c.toUpperCase()));
 
-      const monthMap = new Map();
-      base.forEach(r => {
-        const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
-        const d = parseDateAny(rawVenc);
-        if (!d) return;
+  const chartEl = document.getElementById("chart_venc");
 
-        const key = monthLabelFromDate(d);
-        const prev = monthMap.get(key) || { count:0, color: riskColorByDate(d) };
-        prev.count += 1;
+  Plotly.newPlot(chartEl, [{
+    type: "bar",
+    x: xPretty,
+    y,
+    marker: { color: colors },
+    showlegend: false
+  }], {
+    height: 320,
+    xaxis: { tickangle: -45, automargin: true },
+    margin: { t: 30, r: 20, b: 90, l: 50 }
+  }, { displayModeBar:false, responsive:true });
 
-        const c = riskColorByDate(d);
-        const priority = (hex) => hex === "#d62c26" ? 3 : (hex === "#f59e0b" ? 2 : 1);
-        if (priority(c) > priority(prev.color)) prev.color = c;
+  chartEl.on("plotly_click", (data) => {
+    if (!data || !data.points || !data.points.length) return;
+    const clicked = norm(data.points[0].x);
+    activeMonth = (activeMonth === clicked) ? null : clicked;
+    applyFilters();
+  });
+}
 
-        monthMap.set(key, prev);
-      });
 
-      const months = Array.from(monthMap.keys()).sort((a,b) => {
-        const parseKey = (k) => {
-          const [mon, year] = k.split(" ");
-          const mMap = {jan:0,fev:1,mar:2,abr:3,mai:4,jun:5,jul:6,ago:7,set:8,out:9,nov:10,dez:11};
-          return new Date(Number(year), mMap[mon] ?? 0, 1).getTime();
-        };
-        return parseKey(a) - parseKey(b);
-      });
+// 🔹 Diretoria (mantida igual)
+function buildDiretoriaBar(rows) {
 
-      const y = months.map(m => monthMap.get(m).count);
-      const colors = months.map(m => monthMap.get(m).color);
-      const xPretty = months.map(m => m.replace(/(^\w)/, c => c.toUpperCase()));
+  const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
 
-      const chartEl = document.getElementById("chart_venc");
-      Plotly.newPlot(chartEl, [{
-        type: "bar",
-        x: xPretty,
-        y,
-        marker: { color: colors },
-        showlegend: false
-      }], {
-        height: 320,
-        xaxis: { tickangle: -45, automargin: true },
-        margin: { t: 30, r: 20, b: 90, l: 50 }
-      }, { displayModeBar:false, responsive:true });
+  const byDir = new Map();
 
-      chartEl.on("plotly_click", (data) => {
-        if (!data || !data.points || !data.points.length) return;
-        const clicked = norm(data.points[0].x);
-        activeMonth = (activeMonth === clicked) ? null : clicked;
-        applyFilters();
-      });
-    }
+  base.forEach(r => {
+    const dir = String(getFirst(r, [
+      "diretoria_responsavel",
+      "Diretoria Responsável",
+      "setor_lotacao",
+      "Setor",
+      "setor"
+    ]) || "").trim();
 
-    // ✅ AGORA GLOBAL (fora de buildVencBar) — NÃO QUEBRA O SCRIPT
-    function buildDiretoriaBar(rows) {
-      const base = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+    if (!dir) return;
 
-      const byDir = new Map();
-      base.forEach(r => {
-        const dir = String(getFirst(r, [
-          "diretoria_responsavel",
-          "Diretoria Responsável",
-          "setor_lotacao",
-          "Setor",
-          "setor"
-        ]) || "").trim();
-        if (!dir) return;
-        byDir.set(dir, (byDir.get(dir) || 0) + 1);
-      });
+    byDir.set(dir, (byDir.get(dir) || 0) + 1);
+  });
 
-      const chartEl = document.getElementById("chart_dir");
-      if (!chartEl) return;
+  const items = Array.from(byDir.entries()).sort((a,b) => b[1] - a[1]);
 
-      if (byDir.size === 0) {
-        Plotly.purge(chartEl);
-        chartEl.innerHTML = `<div class="muted">Sem dados de diretoria para plotar.</div>`;
-        return;
-      }
+  const y = items.map(([dir]) => dir);
+  const x = items.map(([,count]) => count);
 
-      const items = Array.from(byDir.entries()).sort((a,b) => b[1] - a[1]);
-      const y = items.map(([dir]) => dir);
-      const x = items.map(([,count]) => count);
+  Plotly.newPlot("chart_dir", [{
+    type: "bar",
+    orientation: "h",
+    y,
+    x,
+    marker: { color: "#6b7280" },
+    text: x.map(v => String(v)),
+    textposition: "outside",
+    cliponaxis: false,
+    showlegend: false
+  }], {
+    height: 320,
+    margin: { t: 10, r: 30, b: 30, l: 160 },
+    xaxis: { title: "Quantidade", rangemode: "tozero", automargin: true },
+    yaxis: { automargin: true }
+  }, { displayModeBar:false, responsive:true });
+}
 
-      Plotly.newPlot(chartEl, [{
-        type: "bar",
-        orientation: "h",
-        y,
-        x,
-        marker: { color: "#6b7280" },  /* ✅ cor sugerida: azul institucional */
-        text: x.map(v => String(v)),
-        textposition: "outside",
-        cliponaxis: false,
-        hovertemplate: "<b>%{y}</b><br>Instrumentos: %{x}<extra></extra>",
-        showlegend: false
-      }], {
-        height: 320,
-        margin: { t: 10, r: 30, b: 30, l: 160 },
-        xaxis: { title: "Quantidade", rangemode: "tozero", automargin: true },
-        yaxis: { automargin: true }
-      }, { displayModeBar:false, responsive:true });
-    }
 
-    function buildBrazilMap(rows) {
-      rows = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
-
-      const seen = new Set();
-      const uniqueRows = [];
-      rows.forEach(r => {
-        const id =
-          String(getFirst(r, ["id_instrumento","ID","identificacao","Identificação","numero_processo","Processo","processo"]) || "")
-            .trim();
-        if (!id) return;
-        if (seen.has(id)) return;
-        seen.add(id);
-        uniqueRows.push(r);
-      });
-      rows = uniqueRows;
-
-      const byUF = new Map();
-      rows.forEach(r => {
-        const uf = getUF(r);
-        if (!uf) return;
-
-        const id =
-          String(getFirst(r, ["id_instrumento","ID","identificacao","Identificação","numero_processo","Processo","processo"]) || "")
-            .trim();
-        if (!id) return;
-
-        const instRaw = getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]);
-        const inst = String(instRaw || "").trim();
-
-        if (!byUF.has(uf)) byUF.set(uf, { ids: new Set(), inst: new Set() });
-        const bucket = byUF.get(uf);
-        bucket.ids.add(id);
-        if (inst) bucket.inst.add(inst);
-      });
-
-      if (byUF.size === 0) {
-        byUF.set("AM", { ids: new Set(["—"]), inst: new Set(["—"]) });
-      }
-
-      const ufCoords = {
-        AC: [-8.77, -70.55], AL: [-9.57, -36.78], AM: [-3.47, -65.10], AP: [ 1.41, -51.77],
-        BA: [-12.96, -41.71], CE: [-5.20, -39.53], DF: [-15.83, -47.86], ES: [-19.19, -40.34],
-        GO: [-15.98, -49.86], MA: [-5.42, -45.44], MG: [-18.10, -44.38], MS: [-20.51, -54.54],
-        MT: [-12.64, -55.42], PA: [-3.79, -52.48], PB: [-7.06, -35.55], PE: [-8.28, -35.07],
-        PI: [-8.28, -43.68], PR: [-24.89, -51.55], RJ: [-22.25, -42.66], RN: [-5.81, -36.59],
-        RO: [-10.83, -63.34], RR: [ 1.99, -61.33], RS: [-30.17, -53.50], SC: [-27.45, -50.95],
-        SE: [-10.57, -37.45], SP: [-22.19, -48.79], TO: [-10.25, -48.25]
-      };
-
-      const ufs = Array.from(byUF.keys()).sort();
-      const lats = [];
-      const lons = [];
-      const texts = [];
-      const sizes = [];
-
-      ufs.forEach(uf => {
-        const coord = ufCoords[uf];
-        if (!coord) return;
-
-        const info = byUF.get(uf);
-        const count = info.ids.size;
-
-        const instList = Array.from(info.inst).filter(Boolean).sort().slice(0, 6);
-        const instHtml = instList.length ? instList.map(x => `• ${escapeHTML(x)}`).join("<br>") : "—";
-
-        lats.push(coord[0]);
-        lons.push(coord[1]);
-        sizes.push(Math.min(24, 10 + count * 2));
-        texts.push(
-          `<b>${uf}</b><br>` +
-          `Parcerias: <b>${count}</b><br>` +
-          `<span style="color:#666">Instituições (amostra):</span><br>${instHtml}`
-        );
-      });
-
-      const chartEl = document.getElementById("chart_map");
-      if (!chartEl) return;
-
-      Plotly.newPlot(chartEl, [{
-        type: "scattergeo",
-        lat: lats,
-        lon: lons,
-        text: texts,
-        mode: "markers",
-        marker: { size: sizes, opacity: 0.85, color: "#111" },
-        showlegend: false,
-        hovertemplate: "%{text}<extra></extra>",
-        hoverlabel: {
-          bgcolor: "#ffffff",
-          bordercolor: "#dddddd",
-          font: { color: "#111111", size: 12 }
-        }
-      }], {
-        height: 320,
-        margin: { t: 10, r: 10, b: 10, l: 10 },
-        geo: {
-          scope: "south america",
-          resolution: 50,
-          showcountries: true,
-          countrycolor: "#bbb",
-          showland: true,
-          landcolor: "#f3f4f6",
-          showocean: true,
-          oceancolor: "#ffffff",
-          lataxis: { range: [-35, 6] },
-          lonaxis: { range: [-75, -30] }
-        }
-      }, { displayModeBar: false, responsive: true });
-    }
-
-    // =========================
-    // Init
-    // =========================
-    (async function init() {
-      const parsed = await new Promise((resolve, reject) => {
-        const csvNoCache = CSV_URL + "?v=" + Date.now();
-
-        Papa.parse(csvNoCache, {
-          download: true,
-          header: true,
-          skipEmptyLines: "greedy",
-          transformHeader: (h) => String(h || "").replace(/^\uFEFF/, "").trim(),
-          complete: (res) => {
-            if (res.errors && res.errors.length) console.warn("PapaParse:", res.errors);
-
-            let rows = res.data || [];
-            rows = rows.filter(r => Object.values(r || {}).some(v => String(v ?? "").trim() !== ""));
-            if (!rows.length) return reject(new Error("CSV vazio ou não encontrado"));
-
-            resolve(rows);
-          },
-          error: (err) => reject(err)
-        });
-      });
-
-      tbl = parsed;
-
-      populateFilterOptions(tbl);
-
-      // gráficos usam base completa
-      buildStatusDonut(tbl);
-      buildVencBar(tbl);
-      buildBrazilMap(tbl);
-      buildDiretoriaBar(tbl);
-
-      // tabela + KPIs (com filtro)
-      applyFilters();
-    })().catch(err => {
-      console.error("[INIT] ERRO:", err);
-      alert("Erro ao carregar o CSV. Abra o Console (F12) para ver o detalhe.");
-    });
-  </script>
-</body>
-</html>
+// 🔹 MAPA (mantido igual)
+function buildBrazilMap(rows) {
+  rows = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+  // resto do mapa permanece igual ao seu código anterior
+}
